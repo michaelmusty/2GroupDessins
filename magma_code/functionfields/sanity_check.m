@@ -50,7 +50,21 @@ end intrinsic;
 intrinsic TwoVerify(s::TwoDB) -> BoolElt
   {}
   if IsFunctionFieldComputed(s) then
-    return BelyiMapSanityCheck(PermutationTriple(s), FunctionField(s), BelyiMap(s));
+    assert Degree(FunctionField(s)) eq Degree(s);
+    vprintf TwoDB : "%o has correct degree\n", Name(s);
+    assert BelyiMapSanityCheck(PermutationTriple(s), FunctionField(s), BelyiMap(s));
+    vprintf TwoDB : "%o has correct ramification\n", Name(s);
+    vprintf TwoDB : "Does %o have correct Galois group? ", Name(s);
+    return #GaloisGroup(FunctionField(s)) eq Degree(s);
+  else
+    return false;
+  end if;
+end intrinsic;
+
+intrinsic IsGaloisNaive(s::TwoDB) -> BoolElt
+  {}
+  if IsFunctionFieldComputed(s) then
+    return false;
   else
     return false;
   end if;

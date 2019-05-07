@@ -14,6 +14,8 @@ declare attributes TwoDB:
     Level,
     PermutationTriple,
     MonodromyGroup,
+  // automorphisms
+    FunctionFieldAutomorphisms,
   // edges
     Edges;
 
@@ -100,6 +102,12 @@ intrinsic MonodromyGroup(s::TwoDB) -> Any
   {}
   return s`MonodromyGroup;
 end intrinsic;
+
+intrinsic FunctionFieldAutomorphisms(s::TwoDB) -> Any
+  {}
+  return s`FunctionFieldAutomorphisms;
+end intrinsic;
+
 
 intrinsic Edges(s::TwoDB) -> Any
   {}

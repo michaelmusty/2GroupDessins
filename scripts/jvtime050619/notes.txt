@@ -1,0 +1,8 @@
+1. Checking Galois : Why are there so many automorphisms? (so_many_auts.m)
+  - 4T1-1,4,4 : D = -R1[1]-Roo[1] + 2*Cl.1 (d4-144.m)
+  - 4T1-2,4,4 : D = R0[1]-R0[2]+R1[1]-Roo[1] (d4-244.m)
+  - 4T2-2,2,2 : D = R0[1]-R0[2] (d4-222.m)
+2. When do we need a constant field extension? Work over FFpbar?
+3. Class group
+4. Lift automorphisms..
+5. What about the constant? sqrt(c*f)? always compute Kop?
