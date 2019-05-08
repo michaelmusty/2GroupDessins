@@ -120,3 +120,8 @@ intrinsic IsFunctionFieldComputed(s::TwoDB) -> Any
   {}
   return assigned s`FunctionField and assigned s`BelyiMap;
 end intrinsic;
+
+intrinsic IsAutComputed(s::TwoDB) -> Any
+  {}
+  return IsFunctionFieldComputed(s) and assigned s`FunctionFieldAutomorphisms;
+end intrinsic;

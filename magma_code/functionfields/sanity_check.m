@@ -60,12 +60,3 @@ intrinsic TwoVerify(s::TwoDB) -> BoolElt
     return false;
   end if;
 end intrinsic;
-
-intrinsic IsGaloisNaive(s::TwoDB) -> BoolElt
-  {}
-  if IsFunctionFieldComputed(s) then
-    return false;
-  else
-    return false;
-  end if;
-end intrinsic;
