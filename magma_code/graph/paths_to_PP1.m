@@ -52,7 +52,7 @@ intrinsic HasRamifiedBelow(s::TwoDB) -> Any
   end if;
 end intrinsic;
 
-intrinsic PathToPP1(s::TwoDB) -> Any
+intrinsic RamifiedPathToPP1(s::TwoDB) -> Any
   {}
   s_iter := s;
   path_reverse := [];
@@ -64,6 +64,19 @@ intrinsic PathToPP1(s::TwoDB) -> Any
     else
       error Sprintf("%o has no path to PP1\nPartial Path:\n%o\n", Name(s), path_reverse);
     end if;
+  end while;
+  return Reverse(path_reverse) cat [s];
+end intrinsic;
+
+intrinsic PathToPP1(s::TwoDB) -> Any
+  {}
+  s_iter := s;
+  path_reverse := [];
+  while Degree(s_iter) gt 2 do
+    below := Below(s_iter);
+    selection := below[1]; // could select "best" candidate below here
+    Append(~path_reverse, selection);
+    s_iter := selection;
   end while;
   return Reverse(path_reverse) cat [s];
 end intrinsic;

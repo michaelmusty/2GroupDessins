@@ -50,12 +50,22 @@ end intrinsic;
 intrinsic TwoVerify(s::TwoDB) -> BoolElt
   {}
   if IsFunctionFieldComputed(s) then
-    assert Degree(FunctionField(s)) eq Degree(s);
-    vprintf TwoDB : "%o has correct degree\n", Name(s);
-    assert BelyiMapSanityCheck(PermutationTriple(s), FunctionField(s), BelyiMap(s));
-    vprintf TwoDB : "%o has correct ramification\n", Name(s);
-    vprintf TwoDB : "Does %o have correct Galois group? ", Name(s);
-    return #GaloisGroup(FunctionField(s)) eq Degree(s);
+    F := RationalExtensionRepresentation(FunctionField(s));
+    // degree of function field
+    b1 := Degree(F) eq Degree(s);
+    vprintf TwoDB : "%o function field degree %o\n", Name(s), Degree(F);
+    // Galois group size
+    gal := GaloisGroup(F);
+    b2 := #gal eq Degree(s);
+    vprintf TwoDB : "%o has Galois group size %o\n", Name(s), #gal;
+    // ramification
+    b3 := BelyiMapSanityCheck(PermutationTriple(s), F, BelyiMap(s));
+    if b3 then
+      vprintf TwoDB : "%o has correct ramification\n", Name(s);
+    else
+      vprintf TwoDB : "%o has INCORRECT ramification\n", Name(s);
+    end if;
+    return b1 and b2 and b3;
   else
     return false;
   end if;
