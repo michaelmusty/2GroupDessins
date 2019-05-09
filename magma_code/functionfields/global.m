@@ -163,6 +163,7 @@ intrinsic GetCandidateFunctions(F_t::FldFun, phi_t::FldFunElt, auts_t::SeqEnum[M
   end for;
   t1 := Cputime();
   vprintf TwoDB : "Galois testing took %o s\n", t1-t0;
+  vprintf TwoDB : "Found %o Galois candidates\n", #galois_candidates;
   return galois_candidates, candidate_functions;
 end intrinsic;
 

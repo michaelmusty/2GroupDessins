@@ -1,10 +1,18 @@
 load "config.m";
 
-s := ReadTwoDB("4T2-2,2,2-g0-2481392762.m");
+d := 4;
+which_object := 7;
+
+q := 3^2;
+FFq := GF(q);
+
+objs := [ReadTwoDB(f) : f in Filenames(d)];
+s := objs[which_object];
 path := PathToPP1(s);
 
-q := 3^4;
-FFq := GF(q);
+// random example
+/* s := ReadTwoDB(Random(Filenames(d))); */
+/* path := PathToPP1(s); */
 
 // d=2, i=1
 path[1] := Degree2(path[1], q);
@@ -22,25 +30,19 @@ F4 := FunctionField(path[2]);
 phi4 := BelyiMap(path[2]);
 auts4 := FunctionFieldAutomorphisms(path[2]);
 assert TwoVerify(path[2]);
-// choose above
-above := Above(path[2]);
-Append(~path, above[7]);
-// get candidate functions
-candidates4, all4 := GetCandidateFunctions(path[3], path[2]);
-f4 := candidates4[1];
+/* // get candidate functions */
+/* candidates4, all4 := GetCandidateFunctions(path[3], path[2]); */
+/* f4 := candidates4[1]; */
 
-// d=8, i=3
-path[3] := LiftBelyiMap(path[3], path[2], f4);
-F8 := FunctionField(path[3]);
-phi8 := BelyiMap(path[3]);
-auts8 := FunctionFieldAutomorphisms(path[3]);
-assert TwoVerify(path[3]);
-// choose above
-above := Above(path[3]);
-Append(~path, above[1]);
-// get candidate functions
-candidates8, all8 := GetCandidateFunctions(path[4], path[3]);
-f8 := candidates8[1];
+/* // d=8, i=3 */
+/* path[3] := LiftBelyiMap(path[3], path[2], f4); */
+/* F8 := FunctionField(path[3]); */
+/* phi8 := BelyiMap(path[3]); */
+/* auts8 := FunctionFieldAutomorphisms(path[3]); */
+/* assert TwoVerify(path[3]); */
+/* // get candidate functions */
+/* candidates8, all8 := GetCandidateFunctions(path[4], path[3]); */
+/* f8 := candidates8[1]; */
 
 /* // d=16, i=4 */
 /* path[4] := LiftBelyiMap(path[4], path[3], f4); */
