@@ -3,7 +3,7 @@ load "config.m";
 s := ReadTwoDB("4T2-2,2,2-g0-2481392762.m");
 path := PathToPP1(s);
 
-q := 3^4;
+q := 3^8;
 FFq := GF(q);
 
 // d=2, i=1
