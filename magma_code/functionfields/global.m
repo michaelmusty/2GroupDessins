@@ -157,7 +157,9 @@ intrinsic GetCandidateFunctions(F_t::FldFun, phi_t::FldFunElt, auts_t::SeqEnum[M
   t0 := Cputime();
   vprintf TwoDB : "Testing %o candidates to see if they generate a Galois extension\n", #candidate_functions;
   for g in candidate_functions do
-    if IsGalois(F_t, g, auts_t) then
+    /* time is_galois := IsGaloisVerbose(g, auts_t); */
+    time is_galois := IsGalois(F_t, g, auts_t);
+    if is_galois then
       Append(~galois_candidates, g);
     end if;
   end for;
@@ -167,7 +169,30 @@ intrinsic GetCandidateFunctions(F_t::FldFun, phi_t::FldFunElt, auts_t::SeqEnum[M
   return galois_candidates, candidate_functions, candidate_divisors;
 end intrinsic;
 
-intrinsic LiftBelyiMap(s::TwoDB, t::TwoDB, f::FldFunElt) -> TwoDB
+intrinsic LiftBelyiMapOnly(s::TwoDB, t::TwoDB, f::FldFunElt) -> TwoDB
+  {}
+  // get info from t
+  assert IsAutComputed(t);
+  F_t := FunctionField(t);
+  phi_t := BelyiMap(t);
+  auts_t := FunctionFieldAutomorphisms(t);
+  // make function field and Belyi map of s
+  d := Degree(s);
+  assert d eq 2*Degree(t);
+  F := eval Sprintf("K<a%o> := ext<F_t|Polynomial([-f,0,1])>; return K;", d);
+  /* F<y4> := ext<F_t|Polynomial([f,0,1])>; */
+  phi := F!phi_t;
+  // assign names
+  /* P := eval Sprintf("P<y%o> := BaseRing(F); return P;", d); */
+  P := eval Sprintf("P<y%o> := Parent(DefiningPolynomial(F)); return P;", d);
+  // assign to s
+  s`FunctionField := F;
+  s`BelyiMap := phi;
+  vprintf TwoDB : "Warning no automorphisms were lifted degree %o to degree %o\n", Degree(t), Degree(s);
+  return s;
+end intrinsic;
+
+intrinsic LiftBelyiMap(s::TwoDB, t::TwoDB, f::FldFunElt : brutal_auts := true) -> TwoDB
   {}
   // get info from t
   assert IsAutComputed(t);
@@ -184,20 +209,36 @@ intrinsic LiftBelyiMap(s::TwoDB, t::TwoDB, f::FldFunElt) -> TwoDB
   /* P := eval Sprintf("P<y%o> := BaseRing(F); return P;", d); */
   P := eval Sprintf("P<y%o> := Parent(DefiningPolynomial(F)); return P;", d);
   // lift auts_t
-  coerced_auts := [];
-  for aut in auts_t do
-    c_aut := hom<F_t->F|aut(F_t.1)>;
-    Append(~coerced_auts, c_aut);
-  end for;
-  auts := [];
-  for i := 1 to #coerced_auts do
-    c_aut := coerced_auts[i];
-    aut := auts_t[i];
-    b,sqrt := IsSquare(aut(f)/f);
-    assert b;
-    Append(~auts, hom<F->F|c_aut, sqrt*F.1>);
-    Append(~auts, hom<F->F|c_aut, -sqrt*F.1>);
-  end for;
+  if brutal_auts then
+    vprintf TwoDB : "Computing upstairs automorphisms: ";
+    t0 := Cputime();
+    all_auts := AutsFixingBaseField(F);
+    t1 := Cputime();
+    vprintf TwoDB : "%o s\n", t1-t0;
+    auts := [];
+    for aut in auts_t do
+      lifts := LiftsOfAutomorphism(aut, F_t, all_auts);
+      assert #lifts eq 2;
+      auts cat:= lifts;
+    end for;
+  else
+    error "something wrong with lifts of automorphisms...see scripts/051019_...";
+    coerced_auts := [];
+    for aut in auts_t do
+      /* c_aut := hom<F_t->F|aut(F_t.1)>; */
+      c_aut := hom<F_t->F|F!(F_t.1)>;
+      Append(~coerced_auts, c_aut);
+    end for;
+    auts := [];
+    for i := 1 to #coerced_auts do
+      c_aut := coerced_auts[i];
+      aut := auts_t[i];
+      b,sqrt := IsSquare(aut(f)/f);
+      assert b;
+      Append(~auts, hom<F->F|c_aut, sqrt*F.1>);
+      Append(~auts, hom<F->F|c_aut, -sqrt*F.1>);
+    end for;
+  end if;
   // assign to s
   s`FunctionField := F;
   s`BelyiMap := phi;

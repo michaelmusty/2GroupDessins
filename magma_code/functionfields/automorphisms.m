@@ -5,34 +5,21 @@ intrinsic IsEqual(aut1::Map, aut2::Map) -> BoolElt
   return Equality(FieldMorphism(aut1), FieldMorphism(aut2));
 end intrinsic;
 
-intrinsic IsEqualOnGenerator(aut1::Map, aut2::Map) -> BoolElt
-  {}
-  F := Domain(aut1);
-  assert #Generators(F) eq 1;
-  return aut1(F.1) eq aut2(F.1);
-end intrinsic;
-
-intrinsic IsAutInList(aut::Map, auts::SeqEnum[Map] : gen := true) -> BoolElt, RngIntElt
+intrinsic IsAutInList(aut::Map, auts::SeqEnum[Map]) -> BoolElt, RngIntElt
   {}
   F := Domain(aut);
   assert F eq Codomain(aut);
   for aut_test in auts do
-    if gen then
-      if IsEqualOnGenerator(aut, aut_test) then
-        return true, Index(auts, aut_test);
-      end if;
-    else
-      if IsEqual(aut, aut_test) then
-        return true, Index(auts, aut_test);
-      end if;
+    if IsEqual(aut, aut_test) then
+      return true, Index(auts, aut_test);
     end if;
   end for;
   return false;
 end intrinsic;
 
-intrinsic AutsFixingBaseField(F::FldFun : gen := true) -> Any
+intrinsic AutsFixingBaseField(F::FldFun) -> Any
   {}
-  all_auts := Automorphisms(F);
+  all_auts := Automorphisms(F : BaseMorphism := IdentityFieldMorphism(ConstantField(F)));
   _<x> := BaseField(RationalExtensionRepresentation(F));
   auts := [];
   for aut in all_auts do
@@ -40,7 +27,7 @@ intrinsic AutsFixingBaseField(F::FldFun : gen := true) -> Any
       if #auts eq 0 then
         Append(~auts, aut);
       else
-        if not IsAutInList(aut, auts : gen := gen) then
+        if not IsAutInList(aut, auts) then
           Append(~auts, aut);
         end if;
       end if;
@@ -49,23 +36,43 @@ intrinsic AutsFixingBaseField(F::FldFun : gen := true) -> Any
   return auts;
 end intrinsic;
 
-intrinsic AllMatchingAutsInList(aut::Map, auts::SeqEnum[Map] : gen := false) -> Any
+intrinsic AllMatchingAutsInList(aut::Map, auts::SeqEnum[Map]) -> Any
   {}
   F := Domain(aut);
   matches := [];
   for aut_test in auts do
-    if gen then
-      if IsEqualOnGenerator(aut, aut_test) then
-        Append(~matches, aut_test);
-      end if;
-    else
-      if IsEqual(aut, aut_test) then
-        Append(~matches, aut_test);
-      end if;
+    if IsEqual(aut, aut_test) then
+      Append(~matches, aut_test);
     end if;
   end for;
   return matches;
 end intrinsic;
+
+/* lifting general automorphisms */
+
+intrinsic LiftsOfAutomorphism(aut_downstairs::Map, F::FldFun, auts_upstairs::SeqEnum[Map]) -> Any
+  {}
+  return LiftsOfAutomorphism(aut_downstairs, [F], auts_upstairs);
+end intrinsic;
+
+intrinsic LiftsOfAutomorphism(aut_downstairs::Map, Fs::SeqEnum[FldFun], auts_upstairs::SeqEnum[Map]) -> Any
+  {}
+  lifts := [];
+  for aut_upstairs in auts_upstairs do
+    does_it_lift := true;
+    for F in Fs do
+      if not (aut_upstairs(F.1) eq aut_downstairs(F.1)) then
+        does_it_lift := false;
+      end if;
+    end for;
+    if does_it_lift then
+      Append(~lifts, aut_upstairs);
+    end if;
+  end for;
+  return lifts;
+end intrinsic;
+
+/* print auts */
 
 /* Kummer theory */
 
