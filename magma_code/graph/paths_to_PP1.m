@@ -5,8 +5,9 @@ intrinsic Below(s::TwoDB) -> Any
   return [ReadTwoDB(DownstairsFilename(e)) : e in Edges(s)];
 end intrinsic;
 
-intrinsic Above(s::TwoDB) -> Any
+intrinsic Above(s_old::TwoDB) -> Any
   {}
+  s := Copy(s_old);
   a,b,c := Explode(Orders(s));
   d := Degree(s);
   f := Filenames(2*d);

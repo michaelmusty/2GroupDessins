@@ -70,3 +70,46 @@ intrinsic TwoVerify(s::TwoDB) -> BoolElt
     return false;
   end if;
 end intrinsic;
+
+intrinsic TwoVerifyBrutal(s::TwoDB) -> BoolElt
+  {}
+  if IsFunctionFieldComputed(s) then
+    F := RationalExtensionRepresentation(FunctionField(s));
+    // degree of function field
+    b1 := Degree(F) eq Degree(s);
+    vprintf TwoDB : "%o function field degree %o\n", Name(s), Degree(F);
+    // Galois group size
+    gal := GaloisGroup(F);
+    b2 := #gal eq Degree(s);
+    vprintf TwoDB : "%o has Galois group size %o\n", Name(s), #gal;
+    // ramification
+    b3 := BelyiMapSanityCheck(PermutationTriple(s), F, BelyiMap(s));
+    if b3 then
+      vprintf TwoDB : "%o has correct ramification\n", Name(s);
+    else
+      vprintf TwoDB : "%o has INCORRECT ramification\n", Name(s);
+    end if;
+    // automorphisms
+    auts := FunctionFieldAutomorphisms(s);
+    all_auts := AutsFixingBaseField(FunctionField(s));
+    b4 := true;
+    bad_auts_inds := [];
+    for i := 1 to #auts do
+      if not IsAutInList(auts[i], all_auts) then
+        Append(~bad_auts_inds, i);
+        b4 := false;
+      end if;
+    end for;
+    if b4 then
+      vprintf TwoDB : "%o has correct auts\n", Name(s);
+    else
+      vprintf TwoDB : "%o has INCORRECT auts\n", Name(s);
+      for i in bad_auts_inds do
+        vprintf TwoDB : "  aut[%o] does not appear to be an automorphism!\n", i;
+      end for;
+    end if;
+    return b1 and b2 and b3 and b4;
+  else
+    return false;
+  end if;
+end intrinsic;

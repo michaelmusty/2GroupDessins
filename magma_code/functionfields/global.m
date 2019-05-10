@@ -12,17 +12,17 @@ intrinsic Degree2(s::TwoDB, q::RngIntElt) -> Any
   kxy2<y2> := PolynomialRing(kx);
   passport_name := GetPassportNameFromFile(Filename(s));
   if passport_name eq "2T1-1,2,2-g0" then
-    F<y2> := FunctionField(y2^2+x-1);
+    F<a2> := FunctionField(y2^2+x-1);
     /* F := FunctionField(-y^2+1-x); */
     /* F := FunctionField(-x^2+1-y); */
     /* I := ideal<P|-x[2]^2+1-x[1]>; */
   elif passport_name eq "2T1-2,1,2-g0" then
-    F<y2> := FunctionField(y2^2-x);
+    F<a2> := FunctionField(y2^2-x);
     /* F := FunctionField(y^2-x); */
     /* F := FunctionField(x^2-y); */
     /* I := ideal<P|x[2]^2 - x[1]>; */
   elif passport_name eq "2T1-2,2,1-g0" then
-    F<y2> := FunctionField(y2^2-x^2+x);
+    F<a2> := FunctionField(y2^2-x^2+x);
     /* F := FunctionField(y^2-x^2+x); */
     /* F := FunctionField(y^2-x*(y^2-1)); */
     /* F := FunctionField(x^2-y*(x^2-1)); */
@@ -88,17 +88,17 @@ intrinsic GetRamificationDivisor(phi::FldFunElt, ram::SeqEnum[BoolElt]) -> Any
   return R;
 end intrinsic;
 
-intrinsic GetCandidateFunctions(s::TwoDB, t::TwoDB : bound := 2) -> Any
+intrinsic GetCandidateFunctions(s::TwoDB, t::TwoDB) -> Any
   {}
   assert IsAutComputed(t);
   F_t := FunctionField(t);
   phi_t := BelyiMap(t);
   auts_t := FunctionFieldAutomorphisms(t);
   ram := GetRamification(s, t);
-  return GetCandidateFunctions(F_t, phi_t, auts_t, ram : bound := bound);
+  return GetCandidateFunctions(F_t, phi_t, auts_t, ram);
 end intrinsic;
 
-intrinsic GetCandidateFunctions(F_t::FldFun, phi_t::FldFunElt, auts_t::SeqEnum[Map], ram::SeqEnum[BoolElt] : bound := 2) -> Any
+intrinsic GetCandidateFunctions(F_t::FldFun, phi_t::FldFunElt, auts_t::SeqEnum[Map], ram::SeqEnum[BoolElt]) -> Any
   {}
   // compute ramification points
   R := GetRamificationDivisor(phi_t, ram);
@@ -107,7 +107,7 @@ intrinsic GetCandidateFunctions(F_t::FldFun, phi_t::FldFunElt, auts_t::SeqEnum[M
   vprintf TwoDB : "Computing Pic of %o\n", F_t;
   Pic, mp := ClassGroup(F_t);
   T := TorsionSubgroup(Pic);
-  TT := [];
+  TT := []; // TwoTorsion
   for g in T do
     if Order(g) le 2 then
       Append(~TT, g);
@@ -163,8 +163,8 @@ intrinsic GetCandidateFunctions(F_t::FldFun, phi_t::FldFunElt, auts_t::SeqEnum[M
   end for;
   t1 := Cputime();
   vprintf TwoDB : "Galois testing took %o s\n", t1-t0;
-  vprintf TwoDB : "Found %o Galois candidates\n", #galois_candidates;
-  return galois_candidates, candidate_functions;
+  vprintf TwoDB : "Found %o Galois candidate(s):\n%o\n", #galois_candidates, galois_candidates;
+  return galois_candidates, candidate_functions, candidate_divisors;
 end intrinsic;
 
 intrinsic LiftBelyiMap(s::TwoDB, t::TwoDB, f::FldFunElt) -> TwoDB
@@ -177,11 +177,11 @@ intrinsic LiftBelyiMap(s::TwoDB, t::TwoDB, f::FldFunElt) -> TwoDB
   // make function field and Belyi map of s
   d := Degree(s);
   assert d eq 2*Degree(t);
-  F := eval Sprintf("K<y%o> := ext<F_t|Polynomial([f,0,1])>; return K;", d);
+  F := eval Sprintf("K<a%o> := ext<F_t|Polynomial([-f,0,1])>; return K;", d);
   /* F<y4> := ext<F_t|Polynomial([f,0,1])>; */
   phi := F!phi_t;
   // assign names
-  P := eval Sprintf("P<y%o> := BaseRing(F); return P;", d);
+  /* P := eval Sprintf("P<y%o> := BaseRing(F); return P;", d); */
   P := eval Sprintf("P<y%o> := Parent(DefiningPolynomial(F)); return P;", d);
   // lift auts_t
   coerced_auts := [];
@@ -193,46 +193,7 @@ intrinsic LiftBelyiMap(s::TwoDB, t::TwoDB, f::FldFunElt) -> TwoDB
   for i := 1 to #coerced_auts do
     c_aut := coerced_auts[i];
     aut := auts_t[i];
-    b,sqrt := IsSquare(aut(F_t.1)/F_t.1);
-    assert b;
-    Append(~auts, hom<F->F|c_aut, sqrt*F.1>);
-    Append(~auts, hom<F->F|c_aut, -sqrt*F.1>);
-  end for;
-  // assign to s
-  s`FunctionField := F;
-  s`BelyiMap := phi;
-  s`FunctionFieldAutomorphisms := auts;
-  return s;
-end intrinsic;
-
-intrinsic LiftBelyiMapOptimize(s::TwoDB, t::TwoDB, f::FldFunElt) -> TwoDB
-  {}
-  // get info from t
-  assert IsAutComputed(t);
-  F_t := FunctionField(t);
-  phi_t := BelyiMap(t);
-  auts_t := FunctionFieldAutomorphisms(t);
-  // make function field and Belyi map of s
-  d := Degree(s);
-  assert d eq 2*Degree(t);
-  F := eval Sprintf("K<y%o> := ext<F_t|Polynomial([f,0,1])>; return K;", d);
-  F := RationalExtensionRepresentation(F);
-  /* F<y4> := ext<F_t|Polynomial([f,0,1])>; */
-  phi := F!phi_t;
-  // assign names
-  P := eval Sprintf("P<y%o> := BaseRing(F); return P;", d);
-  P := eval Sprintf("P<y%o> := Parent(DefiningPolynomial(F)); return P;", d);
-  // lift auts_t
-  coerced_auts := [];
-  for aut in auts_t do
-    c_aut := hom<F_t->F|F!aut(F_t.1)>;
-    Append(~coerced_auts, c_aut);
-  end for;
-  auts := [];
-  for i := 1 to #coerced_auts do
-    c_aut := coerced_auts[i];
-    aut := auts_t[i];
-    b,sqrt := IsSquare(aut(F_t.1)/F_t.1);
+    b,sqrt := IsSquare(aut(f)/f);
     assert b;
     Append(~auts, hom<F->F|c_aut, sqrt*F.1>);
     Append(~auts, hom<F->F|c_aut, -sqrt*F.1>);

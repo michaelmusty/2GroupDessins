@@ -1,6 +1,6 @@
 load "config.m";
 
-q := 3^8;
+q := 3^4;
 FFq := GF(q);
 
 // random example
@@ -44,22 +44,22 @@ assert TwoVerify(path[2]);
 candidates4, all4 := GetCandidateFunctions(path[3], path[2]);
 f4 := candidates4[1];
 
-// d=8, i=3
-path[3] := LiftBelyiMap(path[3], path[2], f4);
-F8 := FunctionField(path[3]);
-phi8 := BelyiMap(path[3]);
-auts8 := FunctionFieldAutomorphisms(path[3]);
-assert TwoVerify(path[3]);
-// get candidate functions
-candidates8, all8 := GetCandidateFunctions(path[4], path[3]);
-f8 := candidates8[1];
+/* // d=8, i=3 */
+/* path[3] := LiftBelyiMap(path[3], path[2], f4); */
+/* F8 := FunctionField(path[3]); */
+/* phi8 := BelyiMap(path[3]); */
+/* auts8 := FunctionFieldAutomorphisms(path[3]); */
+/* assert TwoVerify(path[3]); */
+/* // get candidate functions */
+/* candidates8, all8 := GetCandidateFunctions(path[4], path[3]); */
+/* f8 := candidates8[1]; */
 
-// d=16, i=4
-path[4] := LiftBelyiMap(path[4], path[3], f4);
-F16 := FunctionField(path[4]);
-phi16 := BelyiMap(path[4]);
-auts16 := FunctionFieldAutomorphisms(path[4]);
-assert TwoVerify(path[4]);
-// get candidate functions
+/* // d=16, i=4 */
+/* path[4] := LiftBelyiMap(path[4], path[3], f4); */
+/* F16 := FunctionField(path[4]); */
+/* phi16 := BelyiMap(path[4]); */
+/* auts16 := FunctionFieldAutomorphisms(path[4]); */
+/* assert TwoVerify(path[4]); */
+/* // get candidate functions */
 /* candidates16, all16 := GetCandidateFunctions(path[5], path[4]); */
 /* f16 := candidates16[1]; */
