@@ -218,8 +218,11 @@ intrinsic LiftBelyiMap(s::TwoDB, t::TwoDB, f::FldFunElt : brutal_auts := true) -
     auts := [];
     for aut in auts_t do
       lifts := LiftsOfAutomorphism(aut, F_t, all_auts);
-      assert #lifts eq 2;
-      auts cat:= lifts;
+      if #lifts eq 2 then
+        auts cat:= lifts;
+      else
+        error "auts[%o] had %o lifts when it should have 2!", Index(auts_t, aut), #lifts;
+      end if;
     end for;
   else
     error "something wrong with lifts of automorphisms...see scripts/051019_...";
