@@ -40,11 +40,11 @@ auts8 := FunctionFieldAutomorphisms(s8);
 
 /* degree 16 */
 
-/* s16 := Above(s8)[1]; */
-/* can16, all16 := GetCandidateFunctions(s16, s8); */
-/* f16 := can16[2]; */
-/* s16 := LiftBelyiMap(s16, s8, f16); */
-/* time TwoVerifyBrutal(s16); */
-/* F16 := FunctionField(s16); */
-/* phi16 := BelyiMap(s16); */
-/* auts16 := FunctionFieldAutomorphisms(s16); */
+s16 := Above(s8)[1];
+can16, all16 := GetCandidateFunctions(s16, s8);
+f16 := can16[2];
+s16 := LiftBelyiMap(s16, s8, f16);
+time TwoVerifyBrutal(s16);
+F16 := FunctionField(s16);
+phi16 := BelyiMap(s16);
+auts16 := FunctionFieldAutomorphisms(s16);
