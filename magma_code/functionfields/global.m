@@ -1,6 +1,6 @@
 /* global function fields */
 
-intrinsic Degree2(s::TwoDB, q::RngIntElt) -> Any
+intrinsic Degree2(s::TwoDB, q::RngIntElt : absolute_extension := true) -> Any
   {}
   s := Copy(s);
   assert Degree(s) eq 2;
@@ -8,27 +8,42 @@ intrinsic Degree2(s::TwoDB, q::RngIntElt) -> Any
   assert #factorization eq 1;
   p := factorization[1][1];
   k := GF(q);
-  kx<x> := PolynomialRing(k);
-  kxy2<y2> := PolynomialRing(kx);
-  passport_name := GetPassportNameFromFile(Filename(s));
-  if passport_name eq "2T1-1,2,2-g0" then
-    F<a2> := FunctionField(y2^2+x-1);
-    /* F := FunctionField(-y^2+1-x); */
-    /* F := FunctionField(-x^2+1-y); */
-    /* I := ideal<P|-x[2]^2+1-x[1]>; */
-  elif passport_name eq "2T1-2,1,2-g0" then
-    F<a2> := FunctionField(y2^2-x);
-    /* F := FunctionField(y^2-x); */
-    /* F := FunctionField(x^2-y); */
-    /* I := ideal<P|x[2]^2 - x[1]>; */
-  elif passport_name eq "2T1-2,2,1-g0" then
-    F<a2> := FunctionField(y2^2-x^2+x);
-    /* F := FunctionField(y^2-x^2+x); */
-    /* F := FunctionField(y^2-x*(y^2-1)); */
-    /* F := FunctionField(x^2-y*(x^2-1)); */
-    /* I := ideal<P|x[2]^2-x[1]*(x[2]^2-1)>; */
+  if absolute_extension then
+    kx<x> := PolynomialRing(k);
+    kxy<y> := PolynomialRing(kx);
+    passport_name := GetPassportNameFromFile(Filename(s));
+    if passport_name eq "2T1-1,2,2-g0" then
+      F<a> := FunctionField(y^2+x-1);
+    elif passport_name eq "2T1-2,1,2-g0" then
+      F<a> := FunctionField(y^2-x);
+    elif passport_name eq "2T1-2,2,1-g0" then
+      F<a> := FunctionField(y^2-x^2+x);
+    else
+      error "say what?";
+    end if;
   else
-    error "say what?";
+    kx<x> := PolynomialRing(k);
+    kxy2<y2> := PolynomialRing(kx);
+    passport_name := GetPassportNameFromFile(Filename(s));
+    if passport_name eq "2T1-1,2,2-g0" then
+      F<a2> := FunctionField(y2^2+x-1);
+      /* F := FunctionField(-y^2+1-x); */
+      /* F := FunctionField(-x^2+1-y); */
+      /* I := ideal<P|-x[2]^2+1-x[1]>; */
+    elif passport_name eq "2T1-2,1,2-g0" then
+      F<a2> := FunctionField(y2^2-x);
+      /* F := FunctionField(y^2-x); */
+      /* F := FunctionField(x^2-y); */
+      /* I := ideal<P|x[2]^2 - x[1]>; */
+    elif passport_name eq "2T1-2,2,1-g0" then
+      F<a2> := FunctionField(y2^2-x^2+x);
+      /* F := FunctionField(y^2-x^2+x); */
+      /* F := FunctionField(y^2-x*(y^2-1)); */
+      /* F := FunctionField(x^2-y*(x^2-1)); */
+      /* I := ideal<P|x[2]^2-x[1]*(x[2]^2-1)>; */
+    else
+      error "say what?";
+    end if;
   end if;
   // assign names
   _<x> := BaseRing(F);
@@ -192,7 +207,7 @@ intrinsic LiftBelyiMapOnly(s::TwoDB, t::TwoDB, f::FldFunElt) -> TwoDB
   return s;
 end intrinsic;
 
-intrinsic LiftBelyiMap(s::TwoDB, t::TwoDB, f::FldFunElt : brutal_auts := true) -> TwoDB
+intrinsic LiftBelyiMap(s::TwoDB, t::TwoDB, f::FldFunElt : absolute_extension := true, brutal_auts := true) -> TwoDB
   {}
   // get info from t
   assert IsAutComputed(t);
@@ -203,10 +218,8 @@ intrinsic LiftBelyiMap(s::TwoDB, t::TwoDB, f::FldFunElt : brutal_auts := true) -
   d := Degree(s);
   assert d eq 2*Degree(t);
   F := eval Sprintf("K<a%o> := ext<F_t|Polynomial([-f,0,1])>; return K;", d);
-  /* F<y4> := ext<F_t|Polynomial([f,0,1])>; */
   phi := F!phi_t;
   // assign names
-  /* P := eval Sprintf("P<y%o> := BaseRing(F); return P;", d); */
   P := eval Sprintf("P<y%o> := Parent(DefiningPolynomial(F)); return P;", d);
   // lift auts_t
   if brutal_auts then
@@ -246,6 +259,12 @@ intrinsic LiftBelyiMap(s::TwoDB, t::TwoDB, f::FldFunElt : brutal_auts := true) -
     /* end for; */
   end if;
   // assign to s
+  if absolute_extension then
+    F, auts := RationalExtensionRepresentation(F, auts);
+    phi := F!phi_t;
+    F<a> := F;
+    _<y> := Parent(DefiningPolynomial(F));
+  end if;
   s`FunctionField := F;
   s`BelyiMap := phi;
   s`FunctionFieldAutomorphisms := auts;

@@ -52,19 +52,20 @@ end intrinsic;
 
 intrinsic LiftsOfAutomorphism(aut_downstairs::Map, F::FldFun, auts_upstairs::SeqEnum[Map]) -> Any
   {}
-  return LiftsOfAutomorphism(aut_downstairs, [F], auts_upstairs);
+  assert Codomain(aut_downstairs) eq F;
+  return LiftsOfAutomorphism(aut_downstairs, auts_upstairs);
 end intrinsic;
 
-intrinsic LiftsOfAutomorphism(aut_downstairs::Map, Fs::SeqEnum[FldFun], auts_upstairs::SeqEnum[Map]) -> Any
+intrinsic LiftsOfAutomorphism(aut_downstairs::Map, auts_upstairs::SeqEnum[Map]) -> Any
   {}
   F := Domain(aut_downstairs);
   assert Codomain(aut_downstairs) eq F;
-  l := Round(Log(2, AbsoluteDegree(F)));
+  basis := Basis(F);
   lifts := [];
   for aut_upstairs in auts_upstairs do
     does_it_lift := true;
-    for i := 1 to l do
-      if not (aut_upstairs(F.1^i) eq aut_downstairs(F.1^i)) then
+    for b in basis do
+      if not (aut_upstairs(b) eq aut_downstairs(b)) then
         does_it_lift := false;
       end if;
     end for;
