@@ -24,8 +24,6 @@ phi4 := BelyiMap(s4);
 // lifting auts2 to degree 4
 b,sqrt := IsSquare(auts2[2](f4)/f4);
 K := RationalExtensionRepresentation(F4);
-lifts := [];
-Append(~lifts, hom<F4->K|);
 
 /* f4 := GetCandidateFunctions(s4, s2)[1]; */
 /* s4 := LiftBelyiMap(s4, s2, f4); */

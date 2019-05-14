@@ -48,7 +48,7 @@ intrinsic AllMatchingAutsInList(aut::Map, auts::SeqEnum[Map]) -> Any
   return matches;
 end intrinsic;
 
-/* lifting general automorphisms */
+/* lifting general (brutally computed) automorphisms */
 
 intrinsic LiftsOfAutomorphism(aut_downstairs::Map, F::FldFun, auts_upstairs::SeqEnum[Map]) -> Any
   {}
@@ -57,11 +57,14 @@ end intrinsic;
 
 intrinsic LiftsOfAutomorphism(aut_downstairs::Map, Fs::SeqEnum[FldFun], auts_upstairs::SeqEnum[Map]) -> Any
   {}
+  F := Domain(aut_downstairs);
+  assert Codomain(aut_downstairs) eq F;
+  l := Round(Log(2, AbsoluteDegree(F)));
   lifts := [];
   for aut_upstairs in auts_upstairs do
     does_it_lift := true;
-    for F in Fs do
-      if not (aut_upstairs(F.1) eq aut_downstairs(F.1)) then
+    for i := 1 to l do
+      if not (aut_upstairs(F.1^i) eq aut_downstairs(F.1^i)) then
         does_it_lift := false;
       end if;
     end for;
@@ -70,6 +73,28 @@ intrinsic LiftsOfAutomorphism(aut_downstairs::Map, Fs::SeqEnum[FldFun], auts_ups
     end if;
   end for;
   return lifts;
+end intrinsic;
+
+/* auts written in RationalExtensionRepresentation */
+
+intrinsic RationalExtensionRepresentation(Frelative::FldFun, auts_relative::SeqEnum[Map]) -> Any
+  {}
+  assert AbsoluteDegree(Frelative) eq #auts_relative;
+  F<a> := RationalExtensionRepresentation(Frelative);
+  _<y> := Parent(DefiningPolynomial(F));
+  _<x> := BaseRing(F);
+  FFq := ConstantField(F);
+  if Degree(F) eq 2 then
+    auts := [];
+    Append(~auts, hom<F->F|auts_relative[1](F.1)>);
+    Append(~auts, hom<F->F|auts_relative[2](F.1)>);
+  else
+    auts := [];
+    for i := 1 to #auts_relative do
+      Append(~auts, hom<F->F|auts_relative[i](F.1)>);
+    end for;
+  end if;
+  return F, auts;
 end intrinsic;
 
 /* print auts */

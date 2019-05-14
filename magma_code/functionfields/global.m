@@ -221,26 +221,29 @@ intrinsic LiftBelyiMap(s::TwoDB, t::TwoDB, f::FldFunElt : brutal_auts := true) -
       if #lifts eq 2 then
         auts cat:= lifts;
       else
-        error "auts[%o] had %o lifts when it should have 2!", Index(auts_t, aut), #lifts;
+        error Sprintf("auts[%o] had %o lifts when it should have 2!", Index(auts_t, aut), #lifts);
       end if;
     end for;
   else
+    F_QQ := RationalExtensionRepresentation(F);
+    b,mp := IsIsomorphic(F, F_QQ);
+    assert b;
     error "something wrong with lifts of automorphisms...see scripts/051019_...";
-    coerced_auts := [];
-    for aut in auts_t do
-      /* c_aut := hom<F_t->F|aut(F_t.1)>; */
-      c_aut := hom<F_t->F|F!(F_t.1)>;
-      Append(~coerced_auts, c_aut);
-    end for;
-    auts := [];
-    for i := 1 to #coerced_auts do
-      c_aut := coerced_auts[i];
-      aut := auts_t[i];
-      b,sqrt := IsSquare(aut(f)/f);
-      assert b;
-      Append(~auts, hom<F->F|c_aut, sqrt*F.1>);
-      Append(~auts, hom<F->F|c_aut, -sqrt*F.1>);
-    end for;
+    /* coerced_auts := []; */
+    /* for aut in auts_t do */
+    /*   c_aut := hom<F_t->F|aut(F_t.1)>; */
+    /*   c_aut := hom<F_t->F|F!(F_t.1)>; */
+    /*   Append(~coerced_auts, c_aut); */
+    /* end for; */
+    /* auts := []; */
+    /* for i := 1 to #coerced_auts do */
+    /*   c_aut := coerced_auts[i]; */
+    /*   aut := auts_t[i]; */
+    /*   b,sqrt := IsSquare(aut(f)/f); */
+    /*   assert b; */
+    /*   Append(~auts, hom<F->F|c_aut, sqrt*F.1>); */
+    /*   Append(~auts, hom<F->F|c_aut, -sqrt*F.1>); */
+    /* end for; */
   end if;
   // assign to s
   s`FunctionField := F;
