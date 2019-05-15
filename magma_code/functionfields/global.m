@@ -115,6 +115,7 @@ end intrinsic;
 
 intrinsic GetCandidateFunctions(F_t::FldFun, phi_t::FldFunElt, auts_t::SeqEnum[Map], ram::SeqEnum[BoolElt]) -> Any
   {}
+  FFq := ConstantField(F_t);
   // compute ramification points
   R := GetRamificationDivisor(phi_t, ram);
   // compute Pic and Pic[2]
