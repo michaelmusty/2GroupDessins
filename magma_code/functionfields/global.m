@@ -207,7 +207,20 @@ intrinsic LiftBelyiMapOnly(s::TwoDB, t::TwoDB, f::FldFunElt) -> TwoDB
   return s;
 end intrinsic;
 
-intrinsic LiftBelyiMap(s::TwoDB, t::TwoDB, f::FldFunElt : absolute_extension := true, brutal_auts := true) -> TwoDB
+intrinsic Relation(l::SeqEnum[FldFunElt]) -> Any
+  {}
+  F := Parent(l[1]);
+  d := Degree(F);
+  assert d eq Degree(RationalExtensionRepresentation(F));
+  assert #l eq d+1;
+  M := Matrix([Eltseq(a) : a in l]);
+  K := Kernel(M);
+  basis := Basis(K);
+  assert #basis eq 1;
+  return M, K, basis[1];
+end intrinsic;
+
+intrinsic LiftBelyiMap(s::TwoDB, t::TwoDB, f::FldFunElt : absolute_extension := true, brutal_auts := false) -> TwoDB
   {}
   // get info from t
   assert IsAutComputed(t);
@@ -238,10 +251,37 @@ intrinsic LiftBelyiMap(s::TwoDB, t::TwoDB, f::FldFunElt : absolute_extension := 
       end if;
     end for;
   else
-    F_QQ := RationalExtensionRepresentation(F);
-    b,mp := IsIsomorphic(F, F_QQ);
-    assert b;
-    error "something wrong with lifts of automorphisms...see scripts/051019_...";
+    F_QQ<alpha> := RationalExtensionRepresentation(F);
+    B := [alpha^2] cat [F_QQ!a : a in Basis(F_t)] cat [alpha*F_QQ!a : a in Basis(F_t)];
+    M, K, b := Relation(B);
+    // B = alpha^2 cat (basis of F_t) cat alpha*(basis of F_t)
+    // sum(B[i]*b[i]) = 0
+    // alpha^2+c*alpha+d=0
+    assert #Eltseq(b) eq #B;
+    assert IsZero(&+[B[i]*b[i] : i in [1..#B]]);
+    c_inds := [(2+(d div 2))..(d+1)];
+    d_inds := [2..(2+(d div 2)-1)];
+    c_coeff := F_QQ!(&+[B[i]*b[i] : i in c_inds])/alpha;
+    d_coeff := F_QQ!(&+[B[i]*b[i] : i in d_inds]);
+    assert Parent(alpha^2+c_coeff*alpha+d_coeff) eq F_QQ;
+    assert IsZero(alpha^2+c_coeff*alpha+d_coeff);
+    auts := [];
+    for aut in auts_t do
+      vprintf TwoDB : "Lifting automorphism %o out of %o : ", Index(auts_t, aut), #auts_t;
+      t0 := Cputime();
+      // solve x^2+aut(c)*x+aut(d)=0
+      autc := F_QQ!aut(c_coeff);
+      autd := F_QQ!aut(d_coeff);
+      // solve x^2+autc*x+autd=0
+      is_sq, sqrt := IsSquare(autc^2-4*autd);
+      assert is_sq;
+      root1 := (-autc+sqrt)/2;
+      root2 := (-autc-sqrt)/2;
+      Append(~auts, hom<F_QQ->F_QQ|F_QQ!root1>);
+      Append(~auts, hom<F_QQ->F_QQ|F_QQ!root2>);
+      t1 := Cputime();
+      vprintf TwoDB : "%o s\n", t1-t0;
+    end for;
     /* coerced_auts := []; */
     /* for aut in auts_t do */
     /*   c_aut := hom<F_t->F|aut(F_t.1)>; */

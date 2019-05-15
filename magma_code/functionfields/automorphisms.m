@@ -100,6 +100,21 @@ end intrinsic;
 
 /* print auts */
 
+intrinsic PrintAut(mp::Map) -> Any
+  {}
+  F := Domain(mp);
+  FFq := ConstantField(F);
+  str := Sprintf("Automorphism of %o\n", F);
+  str *:= Sprintf("Generator = %o\n", F.1);
+  for i := 1 to #Basis(F)-1 do
+    b := Basis(F)[i];
+    str *:= Sprintf("%o\t|--> %o\n", b, mp(b));
+  end for;
+  b := Basis(F)[#Basis(F)];
+  str *:= Sprintf("%o\t|--> %o\n", b, mp(b));
+  return str;
+end intrinsic;
+
 /* Kummer theory */
 
 intrinsic IsGalois(f::FldFunElt, auts::SeqEnum[Map]) -> BoolElt

@@ -49,6 +49,7 @@ end intrinsic;
 
 intrinsic TwoVerify(s::TwoDB) -> BoolElt
   {}
+  vprintf TwoDB : "Sanity checks for %o :\n", Name(s);
   if IsFunctionFieldComputed(s) then
     F := RationalExtensionRepresentation(FunctionField(s));
     // degree of function field
@@ -73,6 +74,7 @@ end intrinsic;
 
 intrinsic TwoVerifyBrutal(s::TwoDB) -> BoolElt
   {}
+  vprintf TwoDB : "BRUTAL sanity checks for %o :\n", Name(s);
   if IsFunctionFieldComputed(s) then
     F := RationalExtensionRepresentation(FunctionField(s));
     // degree of function field
