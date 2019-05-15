@@ -1,19 +1,14 @@
+SetColumns(0);
 load "config.m";
 
 q := 3^2;
 FFq := GF(q);
 
-d := 16;
-// key 1: unramified
-// key 2: too many Galois candidates
-// key 3: 
-which_key := 4;
-lax,keys := GetPassports(d : lax := true);
-key := keys[which_key];
-passport := lax[key];
-
-path := PathToPP1(passport[1]);
-s2, s4, s8, s16 := Explode([path[i] : i in [1..#path]]);
+s16 := ReadTwoDB(Random(Filenames(16)));
+path := PathToPP1(s16);
+s2 := path[1];
+s4 := path[2];
+s8 := path[3];
 
 path;
 
