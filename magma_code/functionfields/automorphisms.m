@@ -162,3 +162,26 @@ intrinsic DoAutomorphismsLift(F::FldFun, auts::SeqEnum[Map]) -> BoolElt
   {}
   return IsGalois(F, F.1, auts);
 end intrinsic;
+
+/* constant field extension */
+
+intrinsic ConstantFieldExtension(F::FldFun, mp::Map, auts::SeqEnum[Map]) -> SeqEnum[Map]
+  {}
+  assert F eq Codomain(mp);
+  auts_ext := [];
+  for aut in auts do
+    Append(~auts_ext, hom<F->F|(mp^(-1)*aut*mp)(F.1)>);
+  end for;
+  return auts_ext;
+end intrinsic;
+
+intrinsic AutsOptimized(F::FldFun, Fop::FldFun, mp::Map, auts::SeqEnum[Map]) -> SeqEnum[Map]
+  {}
+  assert Fop eq Codomain(mp);
+  assert F eq Domain(mp);
+  auts_op := [];
+  for aut in auts do
+    Append(~auts_op, hom<Fop->Fop|mp(aut(F.1))>);
+  end for;
+  return auts_op;
+end intrinsic;

@@ -49,24 +49,40 @@ end intrinsic;
 
 intrinsic TwoVerify(s::TwoDB) -> BoolElt
   {}
-  vprintf TwoDB : "Sanity checks for %o :\n", Name(s);
+  vprintf TwoDB : "%o sanity checks:\n", Name(s);
   if IsFunctionFieldComputed(s) then
     F := RationalExtensionRepresentation(FunctionField(s));
     // degree of function field
     b1 := Degree(F) eq Degree(s);
-    vprintf TwoDB : "%o function field degree %o\n", Name(s), Degree(F);
+    vprintf TwoDB : "\tFunction field degree %o\n", Degree(F);
     // Galois group size
     gal := GaloisGroup(F);
     b2 := #gal eq Degree(s);
-    vprintf TwoDB : "%o has Galois group size %o\n", Name(s), #gal;
+    vprintf TwoDB : "\tGalois group size %o\n", #gal;
+    b2prime := IsIsomorphic(gal, MonodromyGroup(s));
+    if b2prime then
+      vprintf TwoDB : "\tGalois group isomorphic to monodromy group\n";
+    else
+      vprintf TwoDB : "\tGalois group NOT isomorphic to monodromy group\n";
+    end if;
+    b2 := b2 and b2prime;
     // ramification
     b3 := BelyiMapSanityCheck(PermutationTriple(s), F, BelyiMap(s));
     if b3 then
-      vprintf TwoDB : "%o has correct ramification\n", Name(s);
+      vprintf TwoDB : "\tCorrect ramification\n";
     else
-      vprintf TwoDB : "%o has INCORRECT ramification\n", Name(s);
+      vprintf TwoDB : "\tINCORRECT ramification\n";
     end if;
-    return b1 and b2 and b3;
+    // explicit automorphisms
+    auts := FunctionFieldAutomorphisms(s);
+    Gauts := AutsToPermutationGroup(auts);
+    b4 := IsIsomorphic(Gauts, MonodromyGroup(s));
+    if b4 then
+      vprintf TwoDB : "\tAutomorphisms isomorphic to monodromy\n";
+    else
+      vprintf TwoDB : "\tAutomorphisms NOT isomorphic to monodromy\n";
+    end if;
+    return b1 and b2 and b3 and b4;
   else
     return false;
   end if;
@@ -114,4 +130,27 @@ intrinsic TwoVerifyBrutal(s::TwoDB) -> BoolElt
   else
     return false;
   end if;
+end intrinsic;
+
+/* automorphisms */
+
+intrinsic FieldMorphisms(l::SeqEnum[Map]) -> SeqEnum[Map]
+  {}
+  return [FieldMorphism(aut) : aut in l];
+end intrinsic;
+
+intrinsic AutToOneLine(fixed_aut::Map, auts::SeqEnum[Map]) -> SeqEnum
+  {}
+  assert fixed_aut in auts;
+  return [Index(auts, fixed_aut*aut) : aut in auts];
+end intrinsic;
+
+intrinsic AutsToPermutationGroup(auts::SeqEnum[Map]) -> GrpPerm
+  {}
+  S := Sym(#auts);
+  permutations := [];
+  for aut in auts do
+    Append(~permutations, S!AutToOneLine(aut, auts));
+  end for;
+  return sub<S|permutations>;
 end intrinsic;

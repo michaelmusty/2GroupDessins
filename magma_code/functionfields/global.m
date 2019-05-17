@@ -174,7 +174,7 @@ intrinsic GetCandidateFunctions(F_t::FldFun, phi_t::FldFunElt, auts_t::SeqEnum[M
   vprintf TwoDB : "Testing %o candidates to see if they generate a Galois extension\n", #candidate_functions;
   for g in candidate_functions do
     /* time is_galois := IsGaloisVerbose(g, auts_t); */
-    time is_galois := IsGalois(F_t, g, auts_t);
+    is_galois := IsGalois(F_t, g, auts_t);
     if is_galois then
       Append(~galois_candidates, g);
     end if;

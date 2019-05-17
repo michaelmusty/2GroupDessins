@@ -15,7 +15,7 @@ path;
 /* degree 2 */
 
 s2 := Degree2(s2, q);
-time TwoVerifyBrutal(s2);
+time TwoVerify(s2);
 F2<a2> := FunctionField(s2);
 phi2 := BelyiMap(s2);
 auts2 := FunctionFieldAutomorphisms(s2);
@@ -24,7 +24,7 @@ auts2 := FunctionFieldAutomorphisms(s2);
 
 f4 := GetCandidateFunctions(s4, s2)[1];
 s4 := LiftBelyiMap(s4, s2, f4);
-time TwoVerifyBrutal(s4);
+time TwoVerify(s4);
 F4<a> := FunctionField(s4);
 phi4 := BelyiMap(s4);
 auts4 := FunctionFieldAutomorphisms(s4);
@@ -41,9 +41,9 @@ auts8 := FunctionFieldAutomorphisms(s8);
 
 /* degree 16 */
 
-f16 := GetCandidateFunctions(s16, s8)[1];
-s16 := LiftBelyiMap(s16, s8, f16);
-time TwoVerify(s16);
-F16 := FunctionField(s16);
-phi16 := BelyiMap(s16);
-auts16 := FunctionFieldAutomorphisms(s16);
+/* f16 := GetCandidateFunctions(s16, s8)[1]; */
+/* s16 := LiftBelyiMap(s16, s8, f16); */
+/* time TwoVerify(s16); */
+/* F16 := FunctionField(s16); */
+/* phi16 := BelyiMap(s16); */
+/* auts16 := FunctionFieldAutomorphisms(s16); */

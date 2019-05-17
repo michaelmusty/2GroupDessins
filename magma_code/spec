@@ -5,6 +5,9 @@
     TwoDB.m
     read_write.m
     creation.m
+    TwoDBPassport.m
+    read_write_passport.m
+    creation_passport.m
   }
   functionfields
   {
@@ -13,6 +16,8 @@
     manipulating_divisors.m
     class_groups.m
     automorphisms.m
+    passport_wrapper.m
+    passport_sanity_check.m
   }
   graph
   {
