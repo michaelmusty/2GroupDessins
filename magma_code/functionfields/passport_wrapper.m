@@ -113,9 +113,8 @@ intrinsic LiftBelyiMap(s::TwoDBPassport, F::FldFun, phi::FldFunElt, auts::SeqEnu
 end intrinsic;
 
 // Step 1: lowest level
-intrinsic ComputeBelyiMapsForPassportExample(s_old::TwoDBPassport, F::FldFun, phi::FldFunElt, auts::SeqEnum[Map], ram::SeqEnum[BoolElt] : optimized := true) -> BoolElt, TwoDBPassport
+intrinsic ComputeBelyiMapsForPassportExample(s::TwoDBPassport, F::FldFun, phi::FldFunElt, auts::SeqEnum[Map], ram::SeqEnum[BoolElt] : optimized := true) -> BoolElt, TwoDBPassport
   {}
-  s := Copy(s_old);
   // get candidates
   // using function GetCandidateFunctions in global.m
   t0_get := Cputime();
@@ -216,11 +215,25 @@ intrinsic ComputeBelyiMaps(s::TwoDBPassport : optimized := true) -> TwoDBPasspor
     for j := #Fs to i+1 by -1 do // pop the stack
       vprintf TwoDBPassport,1 : "i=%o,j=%o: ", i, j;
       if IsIsomorphic(Fs[i], Fs[j]) then
-        vprintf TwoDBPassport,1 : "isomorphic\n";
-        // now update the lists
-        Remove(~Fs, j);
-        Remove(~phis, j);
-        Remove(~auts_lists, j);
+        vprintf TwoDBPassport,1 : "isomorphic ";
+        // now pick the best one and assign it to Fs[i]
+        // and update the lists
+        best, ind := BestOfPair([* Fs[i], Fs[j] *]);
+        if ind eq 1 then
+          vprintf TwoDBPassport,1 : "choose %o\n", i;
+          Remove(~Fs, j);
+          Remove(~phis, j);
+          Remove(~auts_lists, j);
+        else
+          vprintf TwoDBPassport,1 : "choose %o<-%o\n", i, j;
+          assert ind eq 2;
+          Fs[i] := Fs[j];
+          phis[i] := phis[j];
+          auts_lists[i] := auts_lists[j];
+          Remove(~Fs, j);
+          Remove(~phis, j);
+          Remove(~auts_lists, j);
+        end if;
       else
         vprintf TwoDBPassport,1 : "non isomorphic\n";
       end if;
@@ -231,4 +244,58 @@ intrinsic ComputeBelyiMaps(s::TwoDBPassport : optimized := true) -> TwoDBPasspor
   s`BelyiMaps := phis;
   s`FunctionFieldAutomorphisms := auts_lists;
   return s;
+end intrinsic;
+
+/* choosing "best" function field */
+
+intrinsic Measure(F::FldFun) -> RngIntElt
+  {}
+  poly := DefiningPolynomial(F);
+  height_sum := 0;
+  l := Eltseq(poly);
+  for i := 1 to #l do
+    num := Numerator(l[i]);
+    den := Denominator(l[i]);
+    coeffs_num := Eltseq(num);
+    for j := 1 to #coeffs_num do
+      l_j := Eltseq(coeffs_num[j]);
+      height_sum +:= &+[Integers()!x : x in l_j];
+    end for;
+    coeffs_den := Eltseq(den);
+    for j := 1 to #coeffs_den do
+      l_j := Eltseq(coeffs_den[j]);
+      height_sum +:= &+[Integers()!x : x in l_j];
+    end for;
+  end for;
+  return height_sum;
+end intrinsic;
+
+intrinsic BestFunctionField(l::List) -> FldFun
+  {}
+  if #l eq 1 then
+    return l[1];
+  else
+    best_index := 1;
+    best_measure := Measure(l[1]);
+    for i := 2 to #l do
+      new_measure := Measure(l[i]);
+      if new_measure lt best_measure then
+        best_index := i;
+        best_measure := new_measure;
+      end if;
+    end for;
+    return l[best_index];
+  end if;
+end intrinsic;
+
+intrinsic BestOfPair(l::List) -> Any
+  {}
+  assert #l eq 2;
+  measure1 := Measure(l[1]);
+  measure2 := Measure(l[2]);
+  if measure2 lt measure1 then
+    return l[2], 2;
+  else
+    return l[1], 1;
+  end if;
 end intrinsic;

@@ -1,11 +1,11 @@
 load "config.m";
 SetVerbose("TwoDBPassport", 3);
 
-objs := GetPassportObjects(8);
-s := objs[3];
+objs := GetPassportObjects(16);
+s := objs[1];
+below := PassportsBelow(s);
 
 /* s := ComputeBelyiMaps(s : optimized := true); */
-/* auts := FunctionFieldAutomorphisms(s)[1]; */
 /* assert TwoVerify(s); */
 /* WriteTwoDBPassport(s); */
 /* s_test := ReadTwoDBPassport(Filename(s)); */
