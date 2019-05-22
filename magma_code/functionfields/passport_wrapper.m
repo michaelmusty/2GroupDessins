@@ -71,8 +71,9 @@ intrinsic LiftBelyiMap(s::TwoDBPassport, F::FldFun, phi::FldFunElt, auts::SeqEnu
     autc := K_QQ!aut(c_coeff);
     autd := K_QQ!aut(d_coeff);
     // solve x^2+autc*x+autd=0
-    is_sq, sqrt := IsSquare(autc^2-4*autd);
-    assert is_sq;
+    /* is_sq, sqrt := IsSquare(autc^2-4*autd); */
+    /* assert is_sq; */
+    sqrt := Sqrt(autc^2-4*autd);
     root1 := (-autc+sqrt)/2;
     root2 := (-autc-sqrt)/2;
     Append(~auts_up, hom<K_QQ->K_QQ|K_QQ!root1>);
@@ -81,20 +82,21 @@ intrinsic LiftBelyiMap(s::TwoDBPassport, F::FldFun, phi::FldFunElt, auts::SeqEnu
     vprintf TwoDBPassport,2 : "%o s\n", t1-t0;
   end for;
   // reassign K<-K_QQ and assign names
-  K, auts_up := RationalExtensionRepresentation(K_QQ, auts_up);
-  K<a> := K;
-  phi := K!phi;
-  _<y> := Parent(DefiningPolynomial(K));
-  _<x> := BaseRing(K);
-  FFq := ConstantField(K);
+  t0_rational := Cputime();
+    K, auts_up := RationalExtensionRepresentation(K_QQ, auts_up);
+    K<a> := K;
+    phi := K!phi;
+    _<y> := Parent(DefiningPolynomial(K));
+    _<x> := BaseRing(K);
+    FFq := ConstantField(K);
+  t1_rational := Cputime();
+  vprintf TwoDBPassport,2 : "rational extension representation %o s\n", t1_rational-t0_rational;
   // optimized representation
   if optimized then
+    t0_op := Cputime();
     Kop, mop := OptimizedRepresentation(K);
     // mop: Kop -> K but does not have an inverse
     // so need to find isomorphism
-    is_iso, mp := IsIsomorphic(K, Kop : BaseMorphism := IdentityFieldMorphism(ConstantField(K)));
-    assert is_iso;
-    /* assert mp(BaseRing(K).1) eq BaseRing(Kop).1; */
     mop_inv := Inverse(Kop, K, mop);
     auts_up := AutsOptimized(K, Kop, mop, mop_inv, auts_up);
     // redefine K
@@ -104,6 +106,8 @@ intrinsic LiftBelyiMap(s::TwoDBPassport, F::FldFun, phi::FldFunElt, auts::SeqEnu
     _<y> := Parent(DefiningPolynomial(K));
     _<x> := BaseRing(K);
     FFq := ConstantField(K);
+    t1_op := Cputime();
+    vprintf TwoDBPassport,2 : "optimized representation computed: %o s\n", t1_op-t0_op;
   end if;
   // assign to s
   Append(~s`FunctionFields, K);
@@ -118,7 +122,7 @@ intrinsic ComputeBelyiMapsForPassportExample(s::TwoDBPassport, F::FldFun, phi::F
   // get candidates
   // using function GetCandidateFunctions in global.m
   t0_get := Cputime();
-  candidates := GetCandidateFunctions(F, phi, auts, ram);
+  candidates, all := GetCandidateFunctions(F, phi, auts, ram);
   t1_get := Cputime();
   // remove disconnected cover
   cans_connected := [];
@@ -139,15 +143,46 @@ intrinsic ComputeBelyiMapsForPassportExample(s::TwoDBPassport, F::FldFun, phi::F
   if not assigned s`FunctionFieldAutomorphisms then
     s`FunctionFieldAutomorphisms := [* *];
   end if;
-  // lift Belyi maps and auts
-  // using function in this file
-  // assigning to s happens in ComputeBelyiMapsForPassportBelyiMap intrinsic in this file
-  for f in candidates do
-    t0_lift := Cputime();
-    s := LiftBelyiMap(s, F, phi, auts, f : optimized := optimized);
-    t1_lift := Cputime();
-    vprintf TwoDBPassport,2 : "Lifting candidate %o out of %o: %o s\n", Index(candidates, f), #candidates, t1_lift-t0_lift;
-  end for;
+  // see if candidates are Galois over an extension
+  if #candidates gt 0 then // don't look for candidates over extension
+    // lift Belyi maps and auts
+    // using function in this file
+    // assigning to s happens in ComputeBelyiMapsForPassportBelyiMap intrinsic in this file
+    for f in candidates do
+      t0_lift := Cputime();
+      s := LiftBelyiMap(s, F, phi, auts, f : optimized := optimized);
+      t1_lift := Cputime();
+      vprintf TwoDBPassport,2 : "Lifting candidate %o out of %o: %o s\n", Index(candidates, f), #candidates, t1_lift-t0_lift;
+    end for;
+  else // use candidates_over_ext
+    t0_get_ext := Cputime();
+    candidates_over_ext := [];
+    for f in all do
+      if IsGaloisOverExtension(F, f, auts) then
+        Append(~candidates_over_ext, f);
+      end if;
+    end for;
+    t1_get_ext := Cputime();
+    vprintf TwoDBPassport,1 : "Found %o candidate(s) over extension: %o s\n", #candidates_over_ext, t1_get_ext-t0_get_ext;
+    // extend constants and then lift
+    candidates := candidates_over_ext;
+    // extend FFq to FFq^2
+    q := #ConstantField(F);
+    Fq2, mpq2 := ConstantFieldExtension(F, GF(q^2));
+    mpq2 := FieldMorphism(mpq2);
+    phiq2 := mpq2(phi);
+    autsq2 := ConstantFieldExtension(Fq2, mpq2, auts);
+    // lift Belyi maps and auts
+    // using function in this file
+    // assigning to s happens in ComputeBelyiMapsForPassportBelyiMap intrinsic in this file
+    for f in candidates do
+      fq2 := mpq2(f);
+      t0_lift := Cputime();
+      s := LiftBelyiMap(s, Fq2, phiq2, autsq2, fq2 : optimized := optimized);
+      t1_lift := Cputime();
+      vprintf TwoDBPassport,2 : "Lifting candidate %o out of %o: %o s\n", Index(candidates, f), #candidates, t1_lift-t0_lift;
+    end for;
+  end if;
   if #candidates ge 1 then
     return true, s;
   else

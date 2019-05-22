@@ -162,7 +162,7 @@ intrinsic IsGaloisOverExtension(F::FldFun, f::FldFunElt, auts::SeqEnum[Map]) -> 
     end if;
   end for;
   t1 := Cputime();
-  vprintf TwoDBPassport,3 : "IsGaloisOverExtension(f) with f degree %o took %o s\n", d, t1-t0;
+  /* vprintf TwoDBPassport,3 : "IsGaloisOverExtension(f) with f degree %o took %o s\n", d, t1-t0; */
   return true;
 end intrinsic;
 
@@ -234,3 +234,9 @@ intrinsic AutsOptimized(F::FldFun, Fop::FldFun, mop::Map, mop_inv::Map, auts::Se
   end for;
   return FieldMorphisms(auts_op);
 end intrinsic;
+
+/* action on divisors */
+
+intrinsic IsFixed(D::DivFunElt, aut::Map, mp::Map) -> Any
+  {}
+end intrinsic
