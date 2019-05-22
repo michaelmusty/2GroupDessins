@@ -43,7 +43,7 @@ intrinsic GetRamification(s::TwoDBPassport, t::TwoDBPassport)-> Any
   return GetRamification(abc, abc_below);
 end intrinsic;
 
-intrinsic LiftBelyiMap(s::TwoDBPassport, F::FldFun, phi::FldFunElt, auts::SeqEnum[Map], f::FldFunElt : optimized := false) -> TwoDBPassport
+intrinsic LiftBelyiMap(s::TwoDBPassport, F::FldFun, phi::FldFunElt, auts::SeqEnum[Map], f::FldFunElt : optimized := true) -> TwoDBPassport
   {}
   d := GetPassportInfo(Filename(s))[1];
   assert d eq 2*Degree(F);
@@ -89,13 +89,15 @@ intrinsic LiftBelyiMap(s::TwoDBPassport, F::FldFun, phi::FldFunElt, auts::SeqEnu
   FFq := ConstantField(K);
   // optimized representation
   if optimized then
-    error "optimzed representation sux";
     Kop, mop := OptimizedRepresentation(K);
     // mop: Kop -> K but does not have an inverse
     // so need to find isomorphism
-    is_iso, mop_iso := IsIsomorphic(K, Kop);
+    is_iso, mp := IsIsomorphic(K, Kop : BaseMorphism := IdentityFieldMorphism(ConstantField(K)));
     assert is_iso;
-    auts_up := AutsOptimized(K, Kop, mop_iso, auts_up);
+    /* assert mp(BaseRing(K).1) eq BaseRing(Kop).1; */
+    mop_inv := Inverse(Kop, K, mop);
+    auts_up := AutsOptimized(K, Kop, mop, mop_inv, auts_up);
+    // redefine K
     K := Kop;
     K<a> := K;
     phi := K!mop(phi);
@@ -110,9 +112,10 @@ intrinsic LiftBelyiMap(s::TwoDBPassport, F::FldFun, phi::FldFunElt, auts::SeqEnu
   return s;
 end intrinsic;
 
-// Step 1
-intrinsic ComputeBelyiMapsForPassportExample(s::TwoDBPassport, F::FldFun, phi::FldFunElt, auts::SeqEnum[Map], ram::SeqEnum[BoolElt]) -> BoolElt, TwoDBPassport
+// Step 1: lowest level
+intrinsic ComputeBelyiMapsForPassportExample(s_old::TwoDBPassport, F::FldFun, phi::FldFunElt, auts::SeqEnum[Map], ram::SeqEnum[BoolElt] : optimized := true) -> BoolElt, TwoDBPassport
   {}
+  s := Copy(s_old);
   // get candidates
   // using function GetCandidateFunctions in global.m
   t0_get := Cputime();
@@ -126,7 +129,7 @@ intrinsic ComputeBelyiMapsForPassportExample(s::TwoDBPassport, F::FldFun, phi::F
     end if;
   end for;
   candidates := cans_connected;
-  vprintf TwoDBPassport,1 : "Found %o candidates: %o s\n", #candidates, t1_get-t0_get;
+  vprintf TwoDBPassport,1 : "Found %o candidate(s): %o s\n", #candidates, t1_get-t0_get;
   // initialize lists of s if necessary
   if not assigned s`FunctionFields then
     s`FunctionFields := [* *];
@@ -142,7 +145,7 @@ intrinsic ComputeBelyiMapsForPassportExample(s::TwoDBPassport, F::FldFun, phi::F
   // assigning to s happens in ComputeBelyiMapsForPassportBelyiMap intrinsic in this file
   for f in candidates do
     t0_lift := Cputime();
-    s := LiftBelyiMap(s, F, phi, auts, f);
+    s := LiftBelyiMap(s, F, phi, auts, f : optimized := optimized);
     t1_lift := Cputime();
     vprintf TwoDBPassport,2 : "Lifting candidate %o out of %o: %o s\n", Index(candidates, f), #candidates, t1_lift-t0_lift;
   end for;
@@ -154,7 +157,7 @@ intrinsic ComputeBelyiMapsForPassportExample(s::TwoDBPassport, F::FldFun, phi::F
 end intrinsic;
 
 // Step 2
-intrinsic ComputeBelyiMapsForPassport(s::TwoDBPassport, t::TwoDBPassport) -> TwoDBPassport
+intrinsic ComputeBelyiMapsForPassport(s::TwoDBPassport, t::TwoDBPassport : optimized := true) -> TwoDBPassport
   {}
   Fs := FunctionFields(t);
   phis := BelyiMaps(t);
@@ -171,7 +174,7 @@ intrinsic ComputeBelyiMapsForPassport(s::TwoDBPassport, t::TwoDBPassport) -> Two
     assert #auts eq Degree(F);
     vprintf TwoDBPassport,1 : "starting %o out of %o:\n", i, #Fs;
     t0 := Cputime();
-    at_least_one, s := ComputeBelyiMapsForPassportExample(s, F, phi, auts, ram);
+    at_least_one, s := ComputeBelyiMapsForPassportExample(s, F, phi, auts, ram : optimized := optimized);
     if not at_least_one then // didn't find a possible candidate so extend constants
       q := #ConstantField(F);
       vprintf TwoDBPassport,1 : "No candidates found extending constant field GF(%o) to GF(%o^2)\n", q, q;
@@ -179,7 +182,7 @@ intrinsic ComputeBelyiMapsForPassport(s::TwoDBPassport, t::TwoDBPassport) -> Two
       mpq2 := FieldMorphism(mpq2);
       phiq2 := mpq2(phi);
       autsq2 := ConstantFieldExtension(Fq2, mpq2, auts);
-      at_least_one_q2, s := ComputeBelyiMapsForPassportExample(s, Fq2, phiq2, autsq2, ram);
+      at_least_one_q2, s := ComputeBelyiMapsForPassportExample(s, Fq2, phiq2, autsq2, ram : optimized := optimized);
       if not at_least_one_q2 then
         error Sprintf("%o error: failed to find candidate\n", Name(s));
       end if;
@@ -190,8 +193,8 @@ intrinsic ComputeBelyiMapsForPassport(s::TwoDBPassport, t::TwoDBPassport) -> Two
   return s;
 end intrinsic;
 
-// Step 3
-intrinsic ComputeBelyiMaps(s::TwoDBPassport) -> TwoDBPassport
+// Step 3: highest level
+intrinsic ComputeBelyiMaps(s::TwoDBPassport : optimized := true) -> TwoDBPassport
   {}
   vprintf TwoDBPassport,1 : "%o with ", Name(s);
   passports_below := PassportsBelow(s);
@@ -199,7 +202,7 @@ intrinsic ComputeBelyiMaps(s::TwoDBPassport) -> TwoDBPassport
   for t in passports_below do
     t0 := Cputime();
     vprintf TwoDBPassport,1 : "%o: %o out of %o below\n", Name(t), Index(passports_below, t), #passports_below;
-    s := ComputeBelyiMapsForPassport(s, t);
+    s := ComputeBelyiMapsForPassport(s, t : optimized := optimized);
     t1 := Cputime();
     vprintf TwoDBPassport,1 : "%o done: %o s\n", Name(t), t1-t0;
   end for;

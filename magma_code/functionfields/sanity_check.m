@@ -149,6 +149,12 @@ intrinsic AutsToPermutationGroup(auts::SeqEnum[Map]) -> GrpPerm
   {}
   S := Sym(#auts);
   permutations := [];
+  // printing when auts were messed up
+  /* for i := 1 to #auts do */
+  /*   for j := 1 to #auts do */
+  /*     vprintf TwoDBPassport,3 : "\ti=%o,j=%o:%o\n", i, j, auts[i]*auts[j] in auts; */
+  /*   end for; */
+  /* end for; */
   for aut in auts do
     Append(~permutations, S!AutToOneLine(aut, auts));
   end for;

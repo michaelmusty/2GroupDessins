@@ -1,5 +1,5 @@
 load "config.m";
-SetVerbose("TwoDBPassport", 1);
+SetVerbose("TwoDBPassport", 2);
 
 objs := GetPassportObjects(16);
 s := objs[7];

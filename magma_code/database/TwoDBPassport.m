@@ -1,4 +1,4 @@
-declare verbose TwoDBPassport, 2;
+declare verbose TwoDBPassport, 3;
 declare type TwoDBPassport;
 declare attributes TwoDBPassport:
   Name,
@@ -127,5 +127,5 @@ end intrinsic;
 
 intrinsic PassportsAbove(s::TwoDBPassport) -> Any
   {}
-  return [ReadTwoDBPassport(f) : f in PassportFilenamesAbove];
+  return [ReadTwoDBPassport(f) : f in PassportFilenamesAbove(s)];
 end intrinsic;

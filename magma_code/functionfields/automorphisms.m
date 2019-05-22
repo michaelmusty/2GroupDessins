@@ -124,7 +124,10 @@ end intrinsic;
 
 intrinsic IsGalois(F::FldFun, f::FldFunElt, auts::SeqEnum[Map]) -> BoolElt
   {}
+  t0 := Cputime();
   assert Parent(f) eq F;
+  d := Degree(F);
+  assert #auts eq d;
   for aut in auts do
     assert Domain(aut) eq F;
     assert Codomain(aut) eq F;
@@ -133,6 +136,33 @@ intrinsic IsGalois(F::FldFun, f::FldFunElt, auts::SeqEnum[Map]) -> BoolElt
       return false;
     end if;
   end for;
+  t1 := Cputime();
+  vprintf TwoDBPassport,3 : "IsGalois(f) with f degree %o took %o s\n", d, t1-t0;
+  return true;
+end intrinsic;
+
+intrinsic IsGaloisOverExtension(F::FldFun, f::FldFunElt, auts::SeqEnum[Map]) -> BoolElt
+  {}
+  t0 := Cputime();
+  assert Parent(f) eq F;
+  d := Degree(F);
+  assert #auts eq d;
+  // extend FFq to FFq^2
+  q := #ConstantField(F);
+  Fq2, mpq2 := ConstantFieldExtension(F, GF(q^2));
+  mpq2 := FieldMorphism(mpq2);
+  autsq2 := ConstantFieldExtension(Fq2, mpq2, auts);
+  fq2 := mpq2(f);
+  for aut in autsq2 do
+    assert Domain(aut) eq Fq2;
+    assert Codomain(aut) eq Fq2;
+    b := IsSquare(aut(fq2)/fq2);
+    if not b then
+      return false;
+    end if;
+  end for;
+  t1 := Cputime();
+  vprintf TwoDBPassport,3 : "IsGaloisOverExtension(f) with f degree %o took %o s\n", d, t1-t0;
   return true;
 end intrinsic;
 
@@ -175,13 +205,32 @@ intrinsic ConstantFieldExtension(F::FldFun, mp::Map, auts::SeqEnum[Map]) -> SeqE
   return auts_ext;
 end intrinsic;
 
-intrinsic AutsOptimized(F::FldFun, Fop::FldFun, mp::Map, auts::SeqEnum[Map]) -> SeqEnum[Map]
+/* optimized representation */
+
+intrinsic Inverse(Fop::FldFun, F::FldFun, mop::Map) -> Map
   {}
-  assert Fop eq Codomain(mp);
-  assert F eq Domain(mp);
+  basisF := [mop(b) : b in Basis(Fop)];
+  M := Matrix([Eltseq(b) : b in basisF]);
+  solution := Eltseq(Solution(M,Vector(BaseRing(F),Eltseq(F.1))));
+  assert #solution eq #basisF;
+  image_of_genF := &+[solution[i]*Fop.1^(i-1) : i in [1..#basisF]];
+  mop_inv := hom<F->Fop|image_of_genF>;
+  assert IsIdentity(FieldMorphism(mop*mop_inv));
+  assert IsIdentity(FieldMorphism(mop_inv*mop));
+  return mop_inv;
+end intrinsic;
+
+intrinsic AutsOptimized(F::FldFun, Fop::FldFun, mop::Map, mop_inv::Map, auts::SeqEnum[Map]) -> SeqEnum[Map]
+  {}
+  assert Fop eq Domain(mop);
+  assert F eq Codomain(mop);
+  assert Fop eq Codomain(mop_inv);
+  assert F eq Domain(mop_inv);
+  assert IsIdentity(FieldMorphism(mop*mop_inv));
+  assert IsIdentity(FieldMorphism(mop_inv*mop));
   auts_op := [];
   for aut in auts do
-    Append(~auts_op, hom<Fop->Fop|mp(aut(F.1))>);
+    Append(~auts_op, hom<Fop->Fop|(mop*aut*mop_inv)(Fop.1)>);
   end for;
-  return auts_op;
+  return FieldMorphisms(auts_op);
 end intrinsic;
