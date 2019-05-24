@@ -54,7 +54,7 @@ intrinsic LiftBelyiMap(s::TwoDBPassport, F::FldFun, phi::FldFunElt, auts::SeqEnu
   // lift auts to absolute extension
   K_QQ<alpha> := RationalExtensionRepresentation(K);
   B := [alpha^2] cat [K_QQ!a : a in Basis(F)] cat [alpha*K_QQ!a : a in Basis(F)];
-  M, K, b := Relation(B); // function in global.m
+  M, Ker, b := Relation(B); // function in global.m
   assert #Eltseq(b) eq #B;
   assert IsZero(&+[B[i]*b[i] : i in [1..#B]]);
   c_inds := [(2+(d div 2))..(d+1)];
@@ -63,17 +63,28 @@ intrinsic LiftBelyiMap(s::TwoDBPassport, F::FldFun, phi::FldFunElt, auts::SeqEnu
   d_coeff := K_QQ!(&+[B[i]*b[i] : i in d_inds]);
   assert Parent(alpha^2+c_coeff*alpha+d_coeff) eq K_QQ;
   assert IsZero(alpha^2+c_coeff*alpha+d_coeff);
+  F_QQ := sub<K_QQ|K_QQ!F.1>;
+  F_QQ;
+  assert c_coeff in F_QQ;
+  assert d_coeff in F_QQ;
+  _<t> := PolynomialRing(F_QQ);
+  t^2 + F_QQ!c_coeff*t + F_QQ!d_coeff;
+  assert IsIrreducible(t^2+F_QQ!c_coeff*t+F_QQ!d_coeff);
+  mp := hom<K->K_QQ|K_QQ!K.1>;
+  mp_inv := Inverse(K, K_QQ);
   auts_up := [];
   for aut in auts do
     vprintf TwoDBPassport,2 : "Lifting automorphism %o out of %o : ", Index(auts, aut), #auts;
     t0 := Cputime();
     // solve x^2+aut(c)*x+aut(d)=0
-    autc := K_QQ!aut(c_coeff);
-    autd := K_QQ!aut(d_coeff);
+    /* autc := K_QQ!aut(c_coeff); */
+    autc := (mp_inv*aut*mp)(c_coeff);
+    /* autd := K_QQ!aut(d_coeff); */
+    autd := (mp_inv*aut*mp)(d_coeff);
     // solve x^2+autc*x+autd=0
-    /* is_sq, sqrt := IsSquare(autc^2-4*autd); */
-    /* assert is_sq; */
-    sqrt := Sqrt(autc^2-4*autd);
+    is_sq, sqrt := IsSquare(autc^2-4*autd);
+    assert is_sq;
+    /* sqrt := Sqrt(autc^2-4*autd); */
     root1 := (-autc+sqrt)/2;
     root2 := (-autc-sqrt)/2;
     Append(~auts_up, hom<K_QQ->K_QQ|K_QQ!root1>);
@@ -81,9 +92,14 @@ intrinsic LiftBelyiMap(s::TwoDBPassport, F::FldFun, phi::FldFunElt, auts::SeqEnu
     t1 := Cputime();
     vprintf TwoDBPassport,2 : "%o s\n", t1-t0;
   end for;
+  sigma := PermutationTriple(Objects(s)[1]);
+  print AutsToPermutationGroup(auts_up);
+  print sub<Sym(d)|sigma>;
+  assert IsGroupCorrect(auts_up, sigma);
   // reassign K<-K_QQ and assign names
   t0_rational := Cputime();
     K, auts_up := RationalExtensionRepresentation(K_QQ, auts_up);
+    assert IsGroupCorrect(auts_up, sigma);
     K<a> := K;
     phi := K!phi;
     _<y> := Parent(DefiningPolynomial(K));
@@ -99,6 +115,7 @@ intrinsic LiftBelyiMap(s::TwoDBPassport, F::FldFun, phi::FldFunElt, auts::SeqEnu
     // so need to find isomorphism
     mop_inv := Inverse(Kop, K, mop);
     auts_up := AutsOptimized(K, Kop, mop, mop_inv, auts_up);
+    assert IsGroupCorrect(auts_up, sigma);
     // redefine K
     K := Kop;
     K<a> := K;
@@ -133,16 +150,6 @@ intrinsic ComputeBelyiMapsForPassportExample(s::TwoDBPassport, F::FldFun, phi::F
   end for;
   candidates := cans_connected;
   vprintf TwoDBPassport,1 : "Found %o candidate(s): %o s\n", #candidates, t1_get-t0_get;
-  // initialize lists of s if necessary
-  if not assigned s`FunctionFields then
-    s`FunctionFields := [* *];
-  end if;
-  if not assigned s`BelyiMaps then
-    s`BelyiMaps := [* *];
-  end if;
-  if not assigned s`FunctionFieldAutomorphisms then
-    s`FunctionFieldAutomorphisms := [* *];
-  end if;
   // see if candidates are Galois over an extension
   if #candidates gt 0 then // don't look for candidates over extension
     // lift Belyi maps and auts
@@ -150,6 +157,7 @@ intrinsic ComputeBelyiMapsForPassportExample(s::TwoDBPassport, F::FldFun, phi::F
     // assigning to s happens in ComputeBelyiMapsForPassportBelyiMap intrinsic in this file
     for f in candidates do
       t0_lift := Cputime();
+      Append(~s`WhenItBreaks, [* F, phi, auts, f *]);
       s := LiftBelyiMap(s, F, phi, auts, f : optimized := optimized);
       t1_lift := Cputime();
       vprintf TwoDBPassport,2 : "Lifting candidate %o out of %o: %o s\n", Index(candidates, f), #candidates, t1_lift-t0_lift;
@@ -178,6 +186,7 @@ intrinsic ComputeBelyiMapsForPassportExample(s::TwoDBPassport, F::FldFun, phi::F
     for f in candidates do
       fq2 := mpq2(f);
       t0_lift := Cputime();
+      Append(~s`WhenItBreaks, [* Fq2, phiq2, autsq2, fq2 *]);
       s := LiftBelyiMap(s, Fq2, phiq2, autsq2, fq2 : optimized := optimized);
       t1_lift := Cputime();
       vprintf TwoDBPassport,2 : "Lifting candidate %o out of %o: %o s\n", Index(candidates, f), #candidates, t1_lift-t0_lift;
@@ -249,18 +258,21 @@ intrinsic ComputeBelyiMaps(s::TwoDBPassport : optimized := true) -> TwoDBPasspor
   for i := 1 to #Fs do
     for j := #Fs to i+1 by -1 do // pop the stack
       vprintf TwoDBPassport,1 : "i=%o,j=%o: ", i, j;
-      if IsIsomorphic(Fs[i], Fs[j]) then
+      t0_iso := Cputime();
+      is_iso, iso := IsIsomorphic(Fs[i], Fs[j]);
+      assert DoesAutFixBaseField(iso);
+      if is_iso then
         vprintf TwoDBPassport,1 : "isomorphic ";
         // now pick the best one and assign it to Fs[i]
         // and update the lists
         best, ind := BestOfPair([* Fs[i], Fs[j] *]);
         if ind eq 1 then
-          vprintf TwoDBPassport,1 : "choose %o\n", i;
+          vprintf TwoDBPassport,1 : "choose %o : ", i;
           Remove(~Fs, j);
           Remove(~phis, j);
           Remove(~auts_lists, j);
         else
-          vprintf TwoDBPassport,1 : "choose %o<-%o\n", i, j;
+          vprintf TwoDBPassport,1 : "choose %o<-%o : ", i, j;
           assert ind eq 2;
           Fs[i] := Fs[j];
           phis[i] := phis[j];
@@ -270,8 +282,10 @@ intrinsic ComputeBelyiMaps(s::TwoDBPassport : optimized := true) -> TwoDBPasspor
           Remove(~auts_lists, j);
         end if;
       else
-        vprintf TwoDBPassport,1 : "non isomorphic\n";
+        vprintf TwoDBPassport,1 : "non isomorphic : ";
       end if;
+      t1_iso := Cputime();
+      vprintf TwoDBPassport,1 : "%o s\n", t1_iso-t0_iso;
     end for;
   end for;
   // reassign to s

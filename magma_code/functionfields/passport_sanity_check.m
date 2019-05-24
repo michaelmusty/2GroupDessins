@@ -71,7 +71,7 @@ intrinsic TwoVerify(s::TwoDBPassport) -> BoolElt
     Fs := FunctionFields(s);
     phis := BelyiMaps(s);
     auts_lists := FunctionFieldAutomorphisms(s);
-    assert #objs eq #Fs;
+    /* assert #objs eq #Fs; */
     assert #Fs eq #phis;
     assert #phis eq #auts_lists;
     // passport representatives
@@ -84,6 +84,7 @@ intrinsic TwoVerify(s::TwoDBPassport) -> BoolElt
       vprintf TwoDBPassport,2 : "passport representatives error!\n";
       return false;
     end if;
+    // auts
     // function fields
     sigma := PermutationTriple(objs[1]);
     for i := 1 to #Fs do

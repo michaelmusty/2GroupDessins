@@ -6,7 +6,9 @@ declare attributes TwoDBPassport:
   TwoDBFilenames,
   FunctionFields, // SeqEnum[FldFun]
   BelyiMaps, // SeqEnum[FldFunElt]
-  FunctionFieldAutomorphisms; // SeqEnum[SeqEnum[Map]]
+  FunctionFieldAutomorphisms, // SeqEnum[SeqEnum[Map]]
+  // keep track of along the way
+  WhenItBreaks;
 
 intrinsic Print(s::TwoDBPassport)
   {Print TwoDBPassport}
@@ -32,6 +34,10 @@ end intrinsic;
 intrinsic TwoDBPassportInitialize() -> TwoDBPassport
   {Create an empty TwoDBPassport.}
   s := New(TwoDBPassport);
+  s`FunctionFields := [* *];
+  s`BelyiMaps := [* *];
+  s`FunctionFieldAutomorphisms := [* *];
+  s`WhenItBreaks := [* *];
   return s;
 end intrinsic;
 
@@ -65,6 +71,11 @@ end intrinsic;
 intrinsic FunctionFieldAutomorphisms(s::TwoDBPassport) -> Any
   {}
   return s`FunctionFieldAutomorphisms;
+end intrinsic;
+
+intrinsic WhenItBreaks(s::TwoDBPassport) -> Any
+  {}
+  return s`WhenItBreaks;
 end intrinsic;
 
 /* objects */

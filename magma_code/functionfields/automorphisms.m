@@ -137,7 +137,7 @@ intrinsic IsGalois(F::FldFun, f::FldFunElt, auts::SeqEnum[Map]) -> BoolElt
     end if;
   end for;
   t1 := Cputime();
-  vprintf TwoDBPassport,3 : "IsGalois(f) with f degree %o took %o s\n", d, t1-t0;
+  /* vprintf TwoDBPassport,3 : "IsGalois(f) with f degree %o took %o s\n", d, t1-t0; */
   return true;
 end intrinsic;
 
@@ -220,6 +220,20 @@ intrinsic Inverse(Fop::FldFun, F::FldFun, mop::Map) -> Map
   return mop_inv;
 end intrinsic;
 
+intrinsic Inverse(F::FldFun, Fp::FldFun) -> Map
+  {Fp is RationalExtensionRepresentation of F with map psi:F->Fp. This computes inverse(psi):Fp->F.}
+  mp := hom<F->Fp|Fp!F.1>;
+  basisFp := [mp(b) : b in Basis(F)];
+  M := Matrix([Eltseq(b) : b in basisFp]);
+  solution := Eltseq(Solution(M,Vector(BaseRing(Fp),Eltseq(Fp.1))));
+  assert #solution eq #basisFp;
+  image_of_genFp := &+[solution[i]*F.1^(i-1) : i in [1..#basisFp]];
+  mp_inv := hom<Fp->F|image_of_genFp>;
+  assert IsIdentity(FieldMorphism(mp*mp_inv));
+  assert IsIdentity(FieldMorphism(mp_inv*mp));
+  return mp_inv;
+end intrinsic;
+
 intrinsic AutsOptimized(F::FldFun, Fop::FldFun, mop::Map, mop_inv::Map, auts::SeqEnum[Map]) -> SeqEnum[Map]
   {}
   assert Fop eq Domain(mop);
@@ -233,6 +247,25 @@ intrinsic AutsOptimized(F::FldFun, Fop::FldFun, mop::Map, mop_inv::Map, auts::Se
     Append(~auts_op, hom<Fop->Fop|(mop*aut*mop_inv)(Fop.1)>);
   end for;
   return FieldMorphisms(auts_op);
+end intrinsic;
+
+/* does aut fix FFq(x)? */
+
+intrinsic DoesAutFixBaseField(aut::Map) -> BoolElt
+  {}
+  _<x> := BaseRing(Domain(aut));
+  FFq := ConstantField(Domain(aut));
+  return aut(x) eq x and aut(FFq.1) eq FFq.1;
+end intrinsic;
+
+/* aut sanity check */
+
+intrinsic IsGroupCorrect(auts::SeqEnum[Map], sigma::SeqEnum[GrpPermElt]) -> BoolElt
+  {}
+  d := #auts;
+  G_check := sub<Sym(d)|sigma>;
+  G_auts := AutsToPermutationGroup(auts);
+  return IsIsomorphic(G_check, G_auts);
 end intrinsic;
 
 /* action on divisors */
