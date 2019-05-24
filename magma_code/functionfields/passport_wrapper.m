@@ -43,70 +43,64 @@ intrinsic GetRamification(s::TwoDBPassport, t::TwoDBPassport)-> Any
   return GetRamification(abc, abc_below);
 end intrinsic;
 
+intrinsic AbsoluteExtension(K::FldFun, F::FldFun) -> FldFun
+  {}
+  error "learn to make an absolute extension!";
+  FFq := ConstantField(K);
+  assert FFq eq ConstantField(F);
+  _<x> := BaseRing(F);
+  assert F eq BaseRing(K);
+  minpolyKF := MinimalPolynomial(K.1);
+  assert Eltseq(minpolyKF)[2] eq F!0 and Eltseq(minpolyKF)[3] eq F!1 and #Eltseq(minpolyKF) eq 3;
+  a := Eltseq(minpolyKF)[1];
+  print a;
+  if IsCoercible(BaseRing(F), a) then
+    minpoly := MinimalPolynomial(K!a+K!F.1);
+  else
+    minpoly := MinimalPolynomial(a);
+  end if;
+  _<y> := Parent(minpoly);
+  minpolysqrt := Evaluate(minpoly, y^2);
+  kx := PolynomialRing(FFq);
+  FFqx<x> := FunctionField(kx);
+  print FFqx;
+  print ConstantField(FFqx);
+  _<y> := PolynomialRing(FFqx);
+  print minpolysqrt;
+  print Parent(x);
+  print Parent(y);
+  KQQ := eval Sprintf("return FunctionField(%o);", minpolysqrt);
+  assert Degree(KQQ) eq 2*Degree(F);
+  assert BaseRing(KQQ) eq BaseRing(F);
+  print F;
+  print K;
+  print KQQ;
+  return KQQ, minpolysqrt;
+end intrinsic;
+
 intrinsic LiftBelyiMap(s::TwoDBPassport, F::FldFun, phi::FldFunElt, auts::SeqEnum[Map], f::FldFunElt : optimized := true) -> TwoDBPassport
   {}
   d := GetPassportInfo(Filename(s))[1];
+  sigma := PermutationTriple(Objects(s)[1]);
   assert d eq 2*Degree(F);
   assert phi in F;
   // relative extension
   K := ext<F|Polynomial([-f,0,1])>;
   phi := K!phi;
+  // absolute extension
+  /* K, minpoly := AbsoluteExtension(K, F); */
+  K := RationalExtensionRepresentation(K);
   // lift auts to absolute extension
-  K_QQ<alpha> := RationalExtensionRepresentation(K);
-  B := [alpha^2] cat [K_QQ!a : a in Basis(F)] cat [alpha*K_QQ!a : a in Basis(F)];
-  M, Ker, b := Relation(B); // function in global.m
-  assert #Eltseq(b) eq #B;
-  assert IsZero(&+[B[i]*b[i] : i in [1..#B]]);
-  c_inds := [(2+(d div 2))..(d+1)];
-  d_inds := [2..(2+(d div 2)-1)];
-  c_coeff := K_QQ!(&+[B[i]*b[i] : i in c_inds])/alpha;
-  d_coeff := K_QQ!(&+[B[i]*b[i] : i in d_inds]);
-  assert Parent(alpha^2+c_coeff*alpha+d_coeff) eq K_QQ;
-  assert IsZero(alpha^2+c_coeff*alpha+d_coeff);
-  F_QQ := sub<K_QQ|K_QQ!F.1>;
-  F_QQ;
-  assert c_coeff in F_QQ;
-  assert d_coeff in F_QQ;
-  _<t> := PolynomialRing(F_QQ);
-  t^2 + F_QQ!c_coeff*t + F_QQ!d_coeff;
-  assert IsIrreducible(t^2+F_QQ!c_coeff*t+F_QQ!d_coeff);
-  mp := hom<K->K_QQ|K_QQ!K.1>;
-  mp_inv := Inverse(K, K_QQ);
+  roots := Roots(MinimalPolynomial(K.1), K);
+  roots := [r[1] : r in roots];
+  assert #roots eq Degree(K);
+  assert Degree(K) eq Degree(Parent(sigma[1]));
   auts_up := [];
-  for aut in auts do
-    vprintf TwoDBPassport,2 : "Lifting automorphism %o out of %o : ", Index(auts, aut), #auts;
-    t0 := Cputime();
-    // solve x^2+aut(c)*x+aut(d)=0
-    /* autc := K_QQ!aut(c_coeff); */
-    autc := (mp_inv*aut*mp)(c_coeff);
-    /* autd := K_QQ!aut(d_coeff); */
-    autd := (mp_inv*aut*mp)(d_coeff);
-    // solve x^2+autc*x+autd=0
-    is_sq, sqrt := IsSquare(autc^2-4*autd);
-    assert is_sq;
-    /* sqrt := Sqrt(autc^2-4*autd); */
-    root1 := (-autc+sqrt)/2;
-    root2 := (-autc-sqrt)/2;
-    Append(~auts_up, hom<K_QQ->K_QQ|K_QQ!root1>);
-    Append(~auts_up, hom<K_QQ->K_QQ|K_QQ!root2>);
-    t1 := Cputime();
-    vprintf TwoDBPassport,2 : "%o s\n", t1-t0;
+  for root in roots do
+    assert not IsCoercible(F, root);
+    Append(~auts_up, hom<K->K|root>);
   end for;
-  sigma := PermutationTriple(Objects(s)[1]);
-  print AutsToPermutationGroup(auts_up);
-  print sub<Sym(d)|sigma>;
   assert IsGroupCorrect(auts_up, sigma);
-  // reassign K<-K_QQ and assign names
-  t0_rational := Cputime();
-    K, auts_up := RationalExtensionRepresentation(K_QQ, auts_up);
-    assert IsGroupCorrect(auts_up, sigma);
-    K<a> := K;
-    phi := K!phi;
-    _<y> := Parent(DefiningPolynomial(K));
-    _<x> := BaseRing(K);
-    FFq := ConstantField(K);
-  t1_rational := Cputime();
-  vprintf TwoDBPassport,2 : "rational extension representation %o s\n", t1_rational-t0_rational;
   // optimized representation
   if optimized then
     t0_op := Cputime();
@@ -236,6 +230,28 @@ intrinsic ComputeBelyiMapsForPassport(s::TwoDBPassport, t::TwoDBPassport : optim
   return s;
 end intrinsic;
 
+intrinsic IsIsomorphicOverBaseField(F1::FldFun, F2::FldFun) -> Any
+  {}
+  rootsF1overF2 := Roots(DefiningPolynomial(F1), F2);
+  rootsF1overF2 := [r[1] : r in rootsF1overF2];
+  rootsF2overF1 := Roots(DefiningPolynomial(F2), F1);
+  rootsF2overF1 := [r[1] : r in rootsF2overF1];
+  assert Degree(F1) eq Degree(RationalExtensionRepresentation(F1));
+  d := Degree(F1);
+  assert Degree(F2) eq d;
+  return #rootsF1overF2 eq #rootsF2overF1 and #rootsF1overF2 eq d, FieldMorphism(hom<F1->F2|F2.1>);
+end intrinsic;
+
+intrinsic IsIsomorphicOverBaseFieldAfterConstantFieldExtension(F1::FldFun, F2::FldFun) -> Any
+  {}
+  FFq := ConstantField(F1);
+  q := #FFq;
+  FFq2 := GF(q^2);
+  F1 := ConstantFieldExtension(F1, FFq2);
+  F2 := ConstantFieldExtension(F2, FFq2);
+  return IsIsomorphicOverBaseField(F1, F2);
+end intrinsic;
+
 // Step 3: highest level
 intrinsic ComputeBelyiMaps(s::TwoDBPassport : optimized := true) -> TwoDBPassport
   {}
@@ -259,7 +275,8 @@ intrinsic ComputeBelyiMaps(s::TwoDBPassport : optimized := true) -> TwoDBPasspor
     for j := #Fs to i+1 by -1 do // pop the stack
       vprintf TwoDBPassport,1 : "i=%o,j=%o: ", i, j;
       t0_iso := Cputime();
-      is_iso, iso := IsIsomorphic(Fs[i], Fs[j]);
+      /* is_iso, iso := IsIsomorphic(Fs[i], Fs[j]); */
+      is_iso, iso := IsIsomorphicOverBaseField(Fs[i], Fs[j]);
       assert DoesAutFixBaseField(iso);
       if is_iso then
         vprintf TwoDBPassport,1 : "isomorphic ";
@@ -282,7 +299,31 @@ intrinsic ComputeBelyiMaps(s::TwoDBPassport : optimized := true) -> TwoDBPasspor
           Remove(~auts_lists, j);
         end if;
       else
-        vprintf TwoDBPassport,1 : "non isomorphic : ";
+        is_iso_after, iso_after := IsIsomorphicOverBaseFieldAfterConstantFieldExtension(Fs[i], Fs[j]);
+        if is_iso_after then
+          assert DoesAutFixBaseField(iso_after);
+          vprintf TwoDBPassport,1 : "isomorphic after extending constants ";
+          // now pick the best one and assign it to Fs[i]
+          // and update the lists
+          best, ind := BestOfPair([* Fs[i], Fs[j] *]);
+          if ind eq 1 then
+            vprintf TwoDBPassport,1 : "choose %o : ", i;
+            Remove(~Fs, j);
+            Remove(~phis, j);
+            Remove(~auts_lists, j);
+          else
+            vprintf TwoDBPassport,1 : "choose %o<-%o : ", i, j;
+            assert ind eq 2;
+            Fs[i] := Fs[j];
+            phis[i] := phis[j];
+            auts_lists[i] := auts_lists[j];
+            Remove(~Fs, j);
+            Remove(~phis, j);
+            Remove(~auts_lists, j);
+          end if;
+        else
+          vprintf TwoDBPassport,1 : "non isomorphic : ";
+        end if;
       end if;
       t1_iso := Cputime();
       vprintf TwoDBPassport,1 : "%o s\n", t1_iso-t0_iso;

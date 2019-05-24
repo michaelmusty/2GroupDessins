@@ -71,7 +71,7 @@ intrinsic TwoVerify(s::TwoDBPassport) -> BoolElt
     Fs := FunctionFields(s);
     phis := BelyiMaps(s);
     auts_lists := FunctionFieldAutomorphisms(s);
-    /* assert #objs eq #Fs; */
+    assert #objs eq #Fs;
     assert #Fs eq #phis;
     assert #phis eq #auts_lists;
     // passport representatives

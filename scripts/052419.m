@@ -1,20 +1,17 @@
 load "config.m";
 SetVerbose("TwoDBPassport", 3);
 
-objs := GetPassportObjects(4);
-s := objs[4];
-time s := ComputeBelyiMaps(s : optimized := true);
+objs := GetPassportObjects(16);
+// s := objs[1]; // 308s
+// s := objs[2]; // 641s
+s := objs[3]; // FAILS
+// s := objs[4]; // 5s
+// s := objs[5]; // 75s
+// s := objs[6]; // 33s
+s := objs[7]; //
 
-// debug
-F,phi,auts,f := Explode(WhenItBreaks(s)[1]);
-K := ext<F|Polynomial([-f,0,1])>;
-Kp := RationalExtensionRepresentation(K);
-Fp := sub<Kp|Kp!K.1>;
-
-
-
-
-/* assert TwoVerify(s); */
-/* WriteTwoDBPassport(s); */
-/* s_test := ReadTwoDBPassport(Filename(s)); */
-/* TwoVerify(s_test); */
+s := ComputeBelyiMaps(s);
+assert TwoVerify(s);
+WriteTwoDBPassport(s);
+s_test := ReadTwoDBPassport(Filename(s));
+assert TwoVerify(s_test);
