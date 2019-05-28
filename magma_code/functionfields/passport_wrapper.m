@@ -91,18 +91,31 @@ intrinsic LiftBelyiMap(s::TwoDBPassport, F::FldFun, phi::FldFunElt, auts::SeqEnu
   /* K, minpoly := AbsoluteExtension(K, F); */
   K := RationalExtensionRepresentation(K);
   // lift auts to absolute extension
+  vprintf TwoDBPassport,1 : "Factoring\n%o\n", MinimalPolynomial(K.1);
+  t0_roots := Cputime();
   roots := Roots(MinimalPolynomial(K.1), K);
   roots := [r[1] : r in roots];
+  t1_roots := Cputime();
+  vprintf TwoDBPassport,1 : "%o s\n", t1_roots-t0_roots;
   assert #roots eq Degree(K);
   assert Degree(K) eq Degree(Parent(sigma[1]));
+  vprintf TwoDBPassport,1 : "constructing automorphisms: ";
+  t0_auts_up := Cputime();
   auts_up := [];
   for root in roots do
     assert not IsCoercible(F, root);
     Append(~auts_up, hom<K->K|root>);
   end for;
+  t1_auts_up := Cputime();
+  vprintf TwoDBPassport,1 : "%o s\n", t1_auts_up-t0_auts_up;
+  vprintf TwoDBPassport,1 : "checking automorphisms: ";
+  t0_auts_up_check := Cputime();
   assert IsGroupCorrect(auts_up, sigma);
+  t1_auts_up_check := Cputime();
+  vprintf TwoDBPassport,1 : "%o s\n", t1_auts_up_check-t0_auts_up_check;
   // optimized representation
   if optimized then
+    vprintf TwoDBPassport,1 : "computing optimized representation\n";
     t0_op := Cputime();
     Kop, mop := OptimizedRepresentation(K);
     // mop: Kop -> K but does not have an inverse
@@ -130,6 +143,8 @@ end intrinsic;
 // Step 1: lowest level
 intrinsic ComputeBelyiMapsForPassportExample(s::TwoDBPassport, F::FldFun, phi::FldFunElt, auts::SeqEnum[Map], ram::SeqEnum[BoolElt] : optimized := true) -> BoolElt, TwoDBPassport
   {}
+  // pull monodromy group from s
+  mon := MonodromyGroup(Objects(s)[1]);
   // get candidates
   // using function GetCandidateFunctions in global.m
   t0_get := Cputime();
@@ -143,7 +158,25 @@ intrinsic ComputeBelyiMapsForPassportExample(s::TwoDBPassport, F::FldFun, phi::F
     end if;
   end for;
   candidates := cans_connected;
-  vprintf TwoDBPassport,1 : "Found %o candidate(s): %o s\n", #candidates, t1_get-t0_get;
+  vprintf TwoDBPassport,1 : "Found %o potential candidate(s): %o s\n", #candidates, t1_get-t0_get;
+  // now test these (potentially Galois) candidates
+  // only do this if multiple candidates
+  if #candidates gt 1 then
+    vprintf TwoDBPassport,1 : "Checking potential candidates:\n";
+    galois_candidates := [];
+    for f in candidates do
+      t0_is_galois := Cputime();
+      is_gal := IsGalois(mon, f, auts);
+      t1_is_galois := Cputime();
+      if is_gal then
+        Append(~galois_candidates, f);
+        vprintf TwoDBPassport,1 : "candidate %o out of %o generates a Galois extension: %o s\n", Index(candidates, f), #candidates, t1_is_galois-t0_is_galois;
+      else
+        vprintf TwoDBPassport,1 : "candidate %o out of %o does not generate a Galois extension: %o s\n", Index(candidates, f), #candidates, t1_is_galois-t0_is_galois;
+      end if;
+    end for;
+    candidates := galois_candidates;
+  end if;
   // see if candidates are Galois over an extension
   if #candidates gt 0 then // don't look for candidates over extension
     // lift Belyi maps and auts
@@ -160,7 +193,7 @@ intrinsic ComputeBelyiMapsForPassportExample(s::TwoDBPassport, F::FldFun, phi::F
     t0_get_ext := Cputime();
     candidates_over_ext := [];
     for f in all do
-      if IsGaloisOverExtension(F, f, auts) then
+      if IsPotentiallyGaloisOverExtension(F, f, auts) then
         Append(~candidates_over_ext, f);
       end if;
     end for;
@@ -168,6 +201,24 @@ intrinsic ComputeBelyiMapsForPassportExample(s::TwoDBPassport, F::FldFun, phi::F
     vprintf TwoDBPassport,1 : "Found %o candidate(s) over extension: %o s\n", #candidates_over_ext, t1_get_ext-t0_get_ext;
     // extend constants and then lift
     candidates := candidates_over_ext;
+    // now test these (potentially Galois) candidates
+    // only do this if multiple candidates
+    if #candidates gt 1 then
+      vprintf TwoDBPassport,1 : "Checking potential candidates (with constant field extension):\n";
+      galois_candidates := [];
+      /* for f in candidates do */
+      /*   t0_is_galois := Cputime(); */
+      /*   is_gal := IsGalois(mon, f, auts); */
+      /*   t1_is_galois := Cputime(); */
+      /*   if is_gal then */
+      /*     Append(~galois_candidates, f); */
+      /*     vprintf TwoDBPassport,1 : "candidate %o out of %o generates a Galois extension: %o s\n", Index(candidates, f), #candidates, t1_is_galois-t0_is_galois; */
+      /*   else */
+      /*     vprintf TwoDBPassport,1 : "candidate %o out of %o does not generate a Galois extension: %o s\n", Index(candidates, f), #candidates, t1_is_galois-t0_is_galois; */
+      /*   end if; */
+      /* end for; */
+      /* candidates := galois_candidates; */
+    end if;
     // extend FFq to FFq^2
     q := #ConstantField(F);
     Fq2, mpq2 := ConstantFieldExtension(F, GF(q^2));
@@ -255,9 +306,12 @@ end intrinsic;
 // Step 3: highest level
 intrinsic ComputeBelyiMaps(s::TwoDBPassport : optimized := true) -> TwoDBPassport
   {}
-  vprintf TwoDBPassport,1 : "%o with ", Name(s);
+  size := #Objects(s);
+  size_test := #PassportRepresentatives(PermutationTriple(Objects(s)[1]));
+  assert size eq size_test;
+  vprintf TwoDBPassport,1 : "%o size %o with ", Name(s), size;
   passports_below := PassportsBelow(s);
-  vprintf TwoDBPassport,1 : "%o below:\n", #passports_below;
+  vprintf TwoDBPassport,1 : "%o below:\n%o\n", #passports_below, passports_below;
   for t in passports_below do
     t0 := Cputime();
     vprintf TwoDBPassport,1 : "%o: %o out of %o below\n", Name(t), Index(passports_below, t), #passports_below;
@@ -271,6 +325,8 @@ intrinsic ComputeBelyiMaps(s::TwoDBPassport : optimized := true) -> TwoDBPasspor
   assert #Fs eq #phis;
   assert #Fs eq #auts_lists;
   vprintf TwoDBPassport,1 : "Isomorphism testing %o function fields:\n", #Fs;
+  vprintf TwoDBPassport,1 : "upstairs: %o size %o\n", Name(s), size;
+  vprintf TwoDBPassport,1 : "downstairs:\n%o\n", [ Name(t) : t in passports_below];
   for i := 1 to #Fs do
     for j := #Fs to i+1 by -1 do // pop the stack
       vprintf TwoDBPassport,1 : "i=%o,j=%o: ", i, j;

@@ -95,6 +95,8 @@ intrinsic BelyiMapText(F::FldFun, phi::FldFunElt) -> MonStgElt
   _<x> := BaseRing(F);
   definingpolyF := DefiningPolynomial(F);
   _<y> := Parent(definingpolyF);
+  _<x> := Parent(Coefficients(definingpolyF)[1]);
+  FFq := BaseRing(Coefficients(definingpolyF)[1]);
   // text
   str := "";
   str *:= Sprintf("FFq := %m;\n", FFq);

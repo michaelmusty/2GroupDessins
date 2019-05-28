@@ -117,12 +117,12 @@ end intrinsic;
 
 /* Kummer theory */
 
-intrinsic IsGalois(f::FldFunElt, auts::SeqEnum[Map]) -> BoolElt
+intrinsic IsPotentiallyGalois(f::FldFunElt, auts::SeqEnum[Map]) -> BoolElt
   {}
-  return IsGalois(Parent(f), f, auts);
+  return IsPotentiallyGalois(Parent(f), f, auts);
 end intrinsic;
 
-intrinsic IsGalois(F::FldFun, f::FldFunElt, auts::SeqEnum[Map]) -> BoolElt
+intrinsic IsPotentiallyGalois(F::FldFun, f::FldFunElt, auts::SeqEnum[Map]) -> BoolElt
   {}
   t0 := Cputime();
   assert Parent(f) eq F;
@@ -137,11 +137,11 @@ intrinsic IsGalois(F::FldFun, f::FldFunElt, auts::SeqEnum[Map]) -> BoolElt
     end if;
   end for;
   t1 := Cputime();
-  /* vprintf TwoDBPassport,3 : "IsGalois(f) with f degree %o took %o s\n", d, t1-t0; */
+  /* vprintf TwoDBPassport,3 : "IsPotentiallyGalois(f) with f degree %o took %o s\n", d, t1-t0; */
   return true;
 end intrinsic;
 
-intrinsic IsGaloisOverExtension(F::FldFun, f::FldFunElt, auts::SeqEnum[Map]) -> BoolElt
+intrinsic IsPotentiallyGaloisOverExtension(F::FldFun, f::FldFunElt, auts::SeqEnum[Map]) -> BoolElt
   {}
   t0 := Cputime();
   assert Parent(f) eq F;
@@ -162,11 +162,11 @@ intrinsic IsGaloisOverExtension(F::FldFun, f::FldFunElt, auts::SeqEnum[Map]) -> 
     end if;
   end for;
   t1 := Cputime();
-  /* vprintf TwoDBPassport,3 : "IsGaloisOverExtension(f) with f degree %o took %o s\n", d, t1-t0; */
+  /* vprintf TwoDBPassport,3 : "IsPotentiallyGaloisOverExtension(f) with f degree %o took %o s\n", d, t1-t0; */
   return true;
 end intrinsic;
 
-intrinsic IsGaloisVerbose(f::FldFunElt, auts::SeqEnum[Map]) -> BoolElt
+intrinsic IsPotentiallyGaloisVerbose(f::FldFunElt, auts::SeqEnum[Map]) -> BoolElt
   {}
   F := Parent(f);
   FFq := ConstantField(F);
@@ -190,7 +190,49 @@ end intrinsic;
 
 intrinsic DoAutomorphismsLift(F::FldFun, auts::SeqEnum[Map]) -> BoolElt
   {}
-  return IsGalois(F, F.1, auts);
+  return IsPotentiallyGalois(F, F.1, auts);
+end intrinsic;
+
+/* IsGalois and test the group! */
+
+intrinsic IsGalois(G::GrpPerm, f::FldFunElt, auts::SeqEnum[Map]) -> BoolElt
+  {}
+  F := Parent(f);
+  K := RationalExtensionRepresentation(ext<F|Polynomial([-f,0,1])>);
+  t0_roots := Cputime();
+  time roots := Roots(MinimalPolynomial(K.1), K);
+  roots := [r[1] : r in roots];
+  if not #roots eq Degree(K) then
+    vprintf TwoDBPassport,1 : "field does not have enough roots\n";
+    return false;
+  end if;
+  if not Degree(K) eq Degree(Parent(G.1)) then
+    vprintf TwoDBPassport,1 : "degrees do not match\n";
+    return false;
+  end if;
+  auts_up := [];
+  for root in roots do
+    if IsCoercible(F, root) then
+      vprintf TwoDBPassport,1 : "root lies in subfield\n";
+      return false;
+    end if;
+    Append(~auts_up, hom<K->K|root>);
+  end for;
+  // make permutation group to test against monodromy
+  S := Sym(#auts_up);
+  permutations := [];
+  for fixed_aut in auts_up do
+    // test if fixed_aut generates a permutation
+    for aut in auts_up do
+      if not fixed_aut*aut in auts_up then
+        vprintf TwoDBPassport,1 : "automorphisms not closed\n";
+        return false;
+      end if;
+    end for;
+    time Append(~permutations, S!AutToOneLine(fixed_aut, auts_up));
+  end for;
+  G_test := sub<S|permutations>;
+  return IsIsomorphic(G, G_test);
 end intrinsic;
 
 /* constant field extension */
@@ -270,6 +312,16 @@ end intrinsic;
 
 /* action on divisors */
 
-intrinsic IsFixed(D::DivFunElt, aut::Map, mp::Map) -> Any
+intrinsic IsFixed(D::DivFunElt, aut::Map) -> Any
   {}
+  I0, Ioo := Ideals(D);
+  O0 := Order(I0);
+  Ooo := Order(Ioo);
+  I0_gens := Generators(I0);
+  Ioo_gens := Generators(Ioo);
+  aut_I0_gens := [aut(g) : g in I0_gens];
+  aut_Ioo_gens := [aut(g) : g in Ioo_gens];
+  aut_I0 := ideal<O0|aut_I0_gens>;
+  aut_Ioo := ideal<Ooo|aut_Ioo_gens>;
+  return aut_I0 eq I0 and aut_Ioo eq Ioo;
 end intrinsic

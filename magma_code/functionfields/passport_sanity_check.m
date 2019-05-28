@@ -3,7 +3,7 @@ intrinsic IsComputed(s::TwoDBPassport) -> BoolElt
   return assigned s`FunctionFields and assigned s`BelyiMaps and assigned s`FunctionFieldAutomorphisms;
 end intrinsic;
 
-intrinsic TwoVerify(sigma::SeqEnum[GrpPermElt], F::FldFun, phi::FldFunElt, auts::SeqEnum[Map]) -> BoolElt
+intrinsic TwoVerify(sigma::SeqEnum[GrpPermElt], F::FldFun, phi::FldFunElt, auts::SeqEnum[Map] : galois_group := false) -> BoolElt
   {}
   d := Degree(Parent(sigma[1]));
   assert F eq RationalExtensionRepresentation(F);
@@ -11,16 +11,20 @@ intrinsic TwoVerify(sigma::SeqEnum[GrpPermElt], F::FldFun, phi::FldFunElt, auts:
   b1 := Degree(F) eq d;
   vprintf TwoDBPassport,2 : "\tFunction field degree %o\n", Degree(F);
   // Galois group size
-  gal := GaloisGroup(F);
-  b2 := #gal eq d;
-  vprintf TwoDBPassport,2 : "\tGalois group size %o\n", #gal;
-  b2prime := IsIsomorphic(gal, sub<Sym(d)|sigma>);
-  if b2prime then
-    vprintf TwoDBPassport,2 : "\tGalois group isomorphic to monodromy group\n";
-  else
-    vprintf TwoDBPassport,2 : "\tGalois group NOT isomorphic to monodromy group\n";
+  if galois_group then
+    gal := GaloisGroup(F);
+    b2 := #gal eq d;
+    vprintf TwoDBPassport,2 : "\tGalois group size %o\n", #gal;
+    b2prime := IsIsomorphic(gal, sub<Sym(d)|sigma>);
+    if b2prime then
+      vprintf TwoDBPassport,2 : "\tGalois group isomorphic to monodromy group\n";
+    else
+      vprintf TwoDBPassport,2 : "\tGalois group NOT isomorphic to monodromy group\n";
+    end if;
+    b2 := b2 and b2prime;
+  else // skip this test
+    b2 := true;
   end if;
-  b2 := b2 and b2prime;
   // ramification
   b3 := BelyiMapSanityCheck(sigma, F, phi);
   if b3 then
@@ -64,7 +68,7 @@ intrinsic CompareTriples(l1::SeqEnum[SeqEnum[GrpPermElt]], l2::SeqEnum[SeqEnum[G
   end if;
 end intrinsic;
 
-intrinsic TwoVerify(s::TwoDBPassport) -> BoolElt
+intrinsic TwoVerify(s::TwoDBPassport : galois_group := false) -> BoolElt
   {}
   if IsComputed(s) then
     objs := Objects(s);
@@ -93,7 +97,7 @@ intrinsic TwoVerify(s::TwoDBPassport) -> BoolElt
       F := Fs[i];
       phi := phis[i];
       auts := auts_lists[i];
-      b2 := TwoVerify(sigma, F, phi, auts);
+      b2 := TwoVerify(sigma, F, phi, auts : galois_group := galois_group);
       t1 := Cputime();
       if b2 then
         vprintf TwoDBPassport,2 : "%o s\n", t1-t0;

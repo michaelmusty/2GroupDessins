@@ -18,6 +18,7 @@
     automorphisms.m
     passport_wrapper.m
     passport_sanity_check.m
+    zeta_functions.m
   }
   graph
   {

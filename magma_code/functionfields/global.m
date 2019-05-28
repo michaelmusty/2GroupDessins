@@ -105,6 +105,7 @@ end intrinsic;
 
 intrinsic GetCandidateFunctions(s::TwoDB, t::TwoDB) -> Any
   {}
+  error "deprecated!";
   assert IsAutComputed(t);
   F_t := FunctionField(t);
   phi_t := BelyiMap(t);
@@ -163,6 +164,11 @@ intrinsic GetCandidateFunctions(F_t::FldFun, phi_t::FldFunElt, auts_t::SeqEnum[M
   for D in candidate_divisors do
     V,m := RiemannRochSpace(R-2*D);
     if Dimension(V) eq 1 then
+      vprintf TwoDB : "candidate divisor %o out of %o:\n", Index(candidate_divisors, D), #candidate_divisors;
+      vprintf TwoDB : "R:    %o\n", R@@mp;
+      vprintf TwoDB : "D:    %o\n", D@@mp;
+      vprintf TwoDB : "R-2D: %o\n", (R-2*D)@@mp;
+      assert Degree(R-2*D) eq 0;
       Append(~candidate_functions, m(V.1));
     end if;
   end for;
@@ -174,14 +180,15 @@ intrinsic GetCandidateFunctions(F_t::FldFun, phi_t::FldFunElt, auts_t::SeqEnum[M
   vprintf TwoDB : "Testing %o candidates to see if they generate a Galois extension\n", #candidate_functions;
   for g in candidate_functions do
     /* time is_galois := IsGaloisVerbose(g, auts_t); */
-    is_galois := IsGalois(F_t, g, auts_t);
+    is_galois := IsPotentiallyGalois(F_t, g, auts_t);
     if is_galois then
+      vprintf TwoDB : "candidate function %o out of %o:\n", Index(candidate_functions, g), #candidate_functions;
       Append(~galois_candidates, g);
     end if;
   end for;
   t1 := Cputime();
   vprintf TwoDB : "Galois testing took %o s\n", t1-t0;
-  vprintf TwoDB : "Found %o Galois candidate(s):\n%o\n", #galois_candidates, galois_candidates;
+  vprintf TwoDB : "Found %o (potentially) Galois candidate(s):\n%o\n", #galois_candidates, galois_candidates;
   return galois_candidates, candidate_functions, candidate_divisors;
 end intrinsic;
 
