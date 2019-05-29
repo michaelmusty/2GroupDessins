@@ -1,4 +1,4 @@
 AttachSpec("magma_code/spec");
-SetVerbose("TwoDBPassport", 1);
+SetVerbose("TwoDBPassport", 3);
 SetDebugOnError(true);
 SetColumns(0);
