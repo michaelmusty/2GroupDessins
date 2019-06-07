@@ -6,7 +6,7 @@ SetDebugOnError(true);
 // Notes:
 
 objs := GetPassportObjects(32);
-s := objs[28];
+s := objs[1];
 s := ComputeBelyiMaps(s : optimized := false);
 assert TwoVerify(s);
 /* WriteTwoDBPassport(s); */
