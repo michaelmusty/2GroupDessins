@@ -8,6 +8,8 @@
     TwoDBPassport.m
     read_write_passport.m
     creation_passport.m
+    TwoDBPassportChar0.m
+    read_write_passport_char0.m
   }
   functionfields
   {
@@ -18,6 +20,7 @@
     automorphisms.m
     passport_wrapper.m
     passport_sanity_check.m
+    passport_sanity_check_char0.m
     zeta_functions.m
   }
   graph
