@@ -10,6 +10,7 @@
     creation_passport.m
     TwoDBPassportChar0.m
     read_write_passport_char0.m
+    creation_passport_char0.m
   }
   functionfields
   {
@@ -19,6 +20,7 @@
     class_groups.m
     automorphisms.m
     passport_wrapper.m
+    passport_wrapper_char0.m
     passport_sanity_check.m
     passport_sanity_check_char0.m
     zeta_functions.m

@@ -1,42 +1,42 @@
-intrinsic GetPassportObjects(d::RngIntElt) -> SeqEnum[TwoDBPassport]
+intrinsic GetPassportChar0Objects(d::RngIntElt) -> SeqEnum[TwoDBPassportChar0]
   {}
   passports, keys := GetPassports(d);
   passport_objs := [];
   for key in keys do
-    Append(~passport_objs, CreateTwoDBPassport(passports[key]));
+    Append(~passport_objs, CreateTwoDBPassportChar0(passports[key]));
   end for;
   return passport_objs;
 end intrinsic;
 
-intrinsic GetRamification(abc::SeqEnum[RngIntElt], abc_below::SeqEnum[RngIntElt]) -> Any
-  {}
-  assert #abc eq 3;
-  assert #abc_below eq 3;
-  // ramification above 0
-    if abc_below[1] eq abc[1] then
-      ram0 := false;
-    else
-      assert abc[1] eq 2*abc_below[1];
-      ram0 := true;
-    end if;
-  // ramification above 1
-    if abc_below[2] eq abc[2] then
-      ram1 := false;
-    else
-      assert abc[2] eq 2*abc_below[2];
-      ram1 := true;
-    end if;
-  // ramification above oo
-    if abc_below[3] eq abc[3] then
-      ramoo := false;
-    else
-      assert abc[3] eq 2*abc_below[3];
-      ramoo := true;
-    end if;
-  return [ram0, ram1, ramoo];
-end intrinsic;
+/* intrinsic GetRamification(abc::SeqEnum[RngIntElt], abc_below::SeqEnum[RngIntElt]) -> Any */
+  /* {} */
+  /* assert #abc eq 3; */
+  /* assert #abc_below eq 3; */
+  /* // ramification above 0 */
+  /*   if abc_below[1] eq abc[1] then */
+  /*     ram0 := false; */
+  /*   else */
+  /*     assert abc[1] eq 2*abc_below[1]; */
+  /*     ram0 := true; */
+  /*   end if; */
+  /* // ramification above 1 */
+  /*   if abc_below[2] eq abc[2] then */
+  /*     ram1 := false; */
+  /*   else */
+  /*     assert abc[2] eq 2*abc_below[2]; */
+  /*     ram1 := true; */
+  /*   end if; */
+  /* // ramification above oo */
+  /*   if abc_below[3] eq abc[3] then */
+  /*     ramoo := false; */
+  /*   else */
+  /*     assert abc[3] eq 2*abc_below[3]; */
+  /*     ramoo := true; */
+  /*   end if; */
+  /* return [ram0, ram1, ramoo]; */
+/* end intrinsic; */
 
-intrinsic GetRamification(s::TwoDBPassport, t::TwoDBPassport)-> Any
+intrinsic GetRamification(s::TwoDBPassportChar0, t::TwoDBPassportChar0)-> Any
   {}
   abc := GetPassportInfo(Filename(s))[3];
   abc_below := GetPassportInfo(Filename(t))[3];
@@ -78,91 +78,91 @@ intrinsic AbsoluteExtension(K::FldFun, F::FldFun) -> FldFun
   return KQQ, minpolysqrt;
 end intrinsic;
 
-intrinsic LiftBelyiMap(s::TwoDBPassport, F::FldFun, phi::FldFunElt, auts::SeqEnum[Map], f::FldFunElt : optimized := true) -> TwoDBPassport
+intrinsic LiftBelyiMap(s::TwoDBPassportChar0, F::FldFun, phi::FldFunElt, auts::SeqEnum[Map], f::FldFunElt : optimized := true) -> TwoDBPassportChar0
   {}
   d := GetPassportInfo(Filename(s))[1];
   sigma := PermutationTriple(Objects(s)[1]);
   assert d eq 2*Degree(F);
   assert phi in F;
   // relative extension
-  K := ext<F|Polynomial([-f,0,1])>;
-  phi := K!phi;
+  L := ext<F|Polynomial([-f,0,1])>;
+  phi := L!phi;
   // absolute extension
   /* K, minpoly := AbsoluteExtension(K, F); */
-  K := RationalExtensionRepresentation(K);
+  L := RationalExtensionRepresentation(L);
   // lift auts to absolute extension
-  vprintf TwoDBPassport,1 : "Factoring\n%o\n", MinimalPolynomial(K.1);
+  vprintf TwoDBPassportChar0,1 : "Factoring\n%o\n", MinimalPolynomial(L.1);
   t0_roots := Cputime();
-  roots := Roots(MinimalPolynomial(K.1), K);
+  roots := Roots(MinimalPolynomial(L.1), L);
   roots := [r[1] : r in roots];
   t1_roots := Cputime();
-  vprintf TwoDBPassport,1 : "%o s\n", t1_roots-t0_roots;
-  assert #roots eq Degree(K);
-  assert Degree(K) eq Degree(Parent(sigma[1]));
-  vprintf TwoDBPassport,1 : "constructing automorphisms: ";
+  vprintf TwoDBPassportChar0,1 : "%o s\n", t1_roots-t0_roots;
+  assert #roots eq Degree(L);
+  assert Degree(L) eq Degree(Parent(sigma[1]));
+  vprintf TwoDBPassportChar0,1 : "constructing automorphisms: ";
   t0_auts_up := Cputime();
   auts_up := [];
   for root in roots do
     assert not IsCoercible(F, root);
-    Append(~auts_up, hom<K->K|root>);
+    Append(~auts_up, hom<L->L|root>);
   end for;
   t1_auts_up := Cputime();
-  vprintf TwoDBPassport,1 : "%o s\n", t1_auts_up-t0_auts_up;
-  vprintf TwoDBPassport,1 : "checking automorphisms: ";
+  vprintf TwoDBPassportChar0,1 : "%o s\n", t1_auts_up-t0_auts_up;
+  vprintf TwoDBPassportChar0,1 : "checking automorphisms: ";
   t0_auts_up_check := Cputime();
   assert IsGroupCorrect(auts_up, sigma);
   t1_auts_up_check := Cputime();
-  vprintf TwoDBPassport,1 : "%o s\n", t1_auts_up_check-t0_auts_up_check;
+  vprintf TwoDBPassportChar0,1 : "%o s\n", t1_auts_up_check-t0_auts_up_check;
   // optimized representation
   if optimized then
-    vprintf TwoDBPassport,1 : "computing optimized representation\n";
+    vprintf TwoDBPassportChar0,1 : "computing optimized representation\n";
     t0_op := Cputime();
-    Kop, mop := OptimizedRepresentation(K);
-    // mop: Kop -> K but does not have an inverse
+    Lop, mop := OptimizedRepresentation(L);
+    // mop: Lop -> L but does not have an inverse
     // so need to find isomorphism
-    mop_inv := Inverse(Kop, K, mop);
-    auts_up := AutsOptimized(K, Kop, mop, mop_inv, auts_up);
+    mop_inv := Inverse(Lop, L, mop);
+    auts_up := AutsOptimized(L, Lop, mop, mop_inv, auts_up);
     assert IsGroupCorrect(auts_up, sigma);
-    // redefine K
-    K := Kop;
-    K<a> := K;
-    phi := K!mop(phi);
-    _<y> := Parent(DefiningPolynomial(K));
-    _<x> := BaseRing(K);
-    FFq := ConstantField(K);
+    // redefine L
+    L := Lop;
+    L<a> := L;
+    phi := L!mop(phi);
+    _<y> := Parent(DefiningPolynomial(L));
+    _<x> := BaseRing(L);
+    /* FFq := ConstantField(K); */
     t1_op := Cputime();
-    vprintf TwoDBPassport,2 : "optimized representation computed: %o s\n", t1_op-t0_op;
+    vprintf TwoDBPassportChar0,2 : "optimized representation computed: %o s\n", t1_op-t0_op;
   end if;
   // assign to s
-  Append(~s`FunctionFields, K);
+  Append(~s`FunctionFields, L);
   Append(~s`BelyiMaps, phi);
   Append(~s`FunctionFieldAutomorphisms, auts_up);
   return s;
 end intrinsic;
 
 // Step 1: lowest level
-intrinsic ComputeBelyiMapsForPassportExample(s::TwoDBPassport, F::FldFun, phi::FldFunElt, auts::SeqEnum[Map], ram::SeqEnum[BoolElt] : optimized := true) -> BoolElt, TwoDBPassport
+intrinsic ComputeBelyiMapsForPassportExample(s::TwoDBPassportChar0, F::FldFun, phi::FldFunElt, auts::SeqEnum[Map], ram::SeqEnum[BoolElt] : optimized := true) -> BoolElt, TwoDBPassportChar0
   {}
   // pull monodromy group from s
   mon := MonodromyGroup(Objects(s)[1]);
   // get candidates
   // using function GetCandidateFunctions in global.m
   t0_get := Cputime();
-  candidates, all := GetCandidateFunctions(F, phi, auts, ram);
+  candidates, all := GetCandidateFunctionsChar0(F, phi, auts, ram);
   t1_get := Cputime();
   // remove disconnected cover
-  cans_connected := [];
-  for can in candidates do
-    if F!can ne F!1 then
-      Append(~cans_connected, can);
-    end if;
-  end for;
-  candidates := cans_connected;
-  vprintf TwoDBPassport,1 : "Found %o potential candidate(s): %o s\n", #candidates, t1_get-t0_get;
+  /* cans_connected := []; */
+  /* for can in candidates do */
+  /*   if F!can ne F!1 then */
+  /*     Append(~cans_connected, can); */
+  /*   end if; */
+  /* end for; */
+  /* candidates := cans_connected; */
+  vprintf TwoDBPassportChar0,1 : "Found %o potential candidate(s): %o s\n", #candidates, t1_get-t0_get;
   // now test these (potentially Galois) candidates
   // only do this if multiple candidates
   if #candidates gt 1 then
-    vprintf TwoDBPassport,1 : "Checking potential candidates:\n";
+    vprintf TwoDBPassportChar0,1 : "Checking potential candidates:\n";
     galois_candidates := [];
     for f in candidates do
       t0_is_galois := Cputime();
@@ -170,9 +170,9 @@ intrinsic ComputeBelyiMapsForPassportExample(s::TwoDBPassport, F::FldFun, phi::F
       t1_is_galois := Cputime();
       if is_gal then
         Append(~galois_candidates, f);
-        vprintf TwoDBPassport,1 : "candidate %o out of %o generates a Galois extension: %o s\n", Index(candidates, f), #candidates, t1_is_galois-t0_is_galois;
+        vprintf TwoDBPassportChar0,1 : "candidate %o out of %o generates a Galois extension: %o s\n", Index(candidates, f), #candidates, t1_is_galois-t0_is_galois;
       else
-        vprintf TwoDBPassport,1 : "candidate %o out of %o does not generate a Galois extension: %o s\n", Index(candidates, f), #candidates, t1_is_galois-t0_is_galois;
+        vprintf TwoDBPassportChar0,1 : "candidate %o out of %o does not generate a Galois extension: %o s\n", Index(candidates, f), #candidates, t1_is_galois-t0_is_galois;
       end if;
     end for;
     candidates := galois_candidates;
@@ -187,18 +187,18 @@ intrinsic ComputeBelyiMapsForPassportExample(s::TwoDBPassport, F::FldFun, phi::F
       Append(~s`WhenItBreaks, [* F, phi, auts, f *]);
       s := LiftBelyiMap(s, F, phi, auts, f : optimized := optimized);
       t1_lift := Cputime();
-      vprintf TwoDBPassport,2 : "Lifting candidate %o out of %o: %o s\n", Index(candidates, f), #candidates, t1_lift-t0_lift;
+      vprintf TwoDBPassportChar0,2 : "Lifting candidate %o out of %o: %o s\n", Index(candidates, f), #candidates, t1_lift-t0_lift;
     end for;
   else // use candidates_over_ext
     t0_get_ext := Cputime();
     candidates_over_ext := [];
     for f in all do
-      if IsPotentiallyGaloisOverExtension(F, f, auts) then
+      if IsPotentiallyGaloisOverExtensionChar0(F, f, auts) then
         Append(~candidates_over_ext, f);
       end if;
     end for;
     t1_get_ext := Cputime();
-    vprintf TwoDBPassport,1 : "Found %o candidate(s) over extension: %o s\n", #candidates_over_ext, t1_get_ext-t0_get_ext;
+    vprintf TwoDBPassportChar0,1 : "Found %o candidate(s) over extension: %o s\n", #candidates_over_ext, t1_get_ext-t0_get_ext;
     // extend constants and then lift
     candidates := candidates_over_ext;
     // now test these (potentially Galois) candidates

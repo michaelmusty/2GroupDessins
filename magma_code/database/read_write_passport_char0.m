@@ -106,8 +106,6 @@ intrinsic BelyiMapChar0Text(F::FldFun, phi::FldFunElt) -> MonStgElt
   definingpolyF := DefiningPolynomial(F);
   _<y> := Parent(definingpolyF);
   _<x> := Parent(Coefficients(definingpolyF)[1]);
-  Kcoeffs := BaseRing(Coefficients(definingpolyF)[1]);
-  assert K eq Kcoeffs;
   // text
   str := "";
   if K eq Rationals() then

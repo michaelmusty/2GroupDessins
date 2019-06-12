@@ -110,7 +110,7 @@ end intrinsic;
 
 intrinsic PassportsBelow(s::TwoDBPassportChar0) -> Any
   {}
-  return [ReadTwoDBPassport(f) : f in PassportFilenamesBelow(s)];
+  return [ReadTwoDBPassportChar0(f) : f in PassportFilenamesBelow(s)];
 end intrinsic;
 
 /* passports above */
@@ -138,5 +138,5 @@ end intrinsic;
 
 intrinsic PassportsAbove(s::TwoDBPassportChar0) -> Any
   {}
-  return [ReadTwoDBPassport(f) : f in PassportFilenamesAbove(s)];
+  return [ReadTwoDBPassportChar0(f) : f in PassportFilenamesAbove(s)];
 end intrinsic;
