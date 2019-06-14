@@ -6,9 +6,9 @@ SetDebugOnError(true);
 
 objs := GetPassportChar0Objects(16);
 
-which_object := 5;
-which_passport_below := 1;
-which_candidate := 1;
+which_object := 39;
+which_passport_below := 6;
+which_candidate := 6;
 which_belyi_map := 1;
 optimized := false;
 
@@ -56,6 +56,8 @@ f := candidates_galois[which_candidate];
 
 /* L, phiL, autsL := LiftOverExtensionChar0(Kextcyc, F, phi, auts, f : optimized := optimized); */
 L, phiL := LiftOverExtensionChar0(Kextcyc, F, phi, auts, f : optimized := optimized);
+
+L := OptimizedRepresentation(L);
 
 poly := DefiningPolynomial(L);
 _<y> := Parent(poly);

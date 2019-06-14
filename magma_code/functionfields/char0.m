@@ -103,7 +103,9 @@ intrinsic CheckIfGalois(candidate_functions::SeqEnum[FldFunElt], auts::SeqEnum[M
     f := candidate_functions[i];
     /* L := candidate_fields[i]; */
     // first check potentially Galois using sqrt
-    if IsPotentiallyGalois(f, auts) then
+    time is_potentially_galois := IsPotentiallyGalois(f,auts);
+    if is_potentially_galois then
+      printf "candidate is Galois\n";
       Append(~galois, f);
       /* roots := Roots(DefiningPolynomial(L), L); */
       /* if AbsoluteDegree(L) eq #roots then */
@@ -142,24 +144,27 @@ intrinsic LiftChar0(F::FldFun, phi::FldFunElt, auts::SeqEnum[Map], f::FldFunElt 
   L := ext<F|Polynomial([-f,0,1])>;
   phi := L!phi;
   // absolute extension
-  L := RationalExtensionRepresentation(L);
+  printf "rational extension representation: ";
+  time L := RationalExtensionRepresentation(L);
   // lift auts to absolute extension
-  vprintf TwoDBPassportChar0,1 : "Factoring\n%o\n", MinimalPolynomial(L.1);
-  t0_roots := Cputime();
-  time roots := Roots(MinimalPolynomial(L.1), L);
-  roots := [r[1] : r in roots];
-  t1_roots := Cputime();
-  vprintf TwoDBPassportChar0,1 : "%o s\n", t1_roots-t0_roots;
-  assert #roots eq Degree(L);
-  vprintf TwoDBPassportChar0,1 : "constructing automorphisms: ";
-  t0_auts_up := Cputime();
-  auts_up := [];
-  for root in roots do
-    assert not IsCoercible(F, root);
-    Append(~auts_up, hom<L->L|root>);
-  end for;
-  t1_auts_up := Cputime();
-  vprintf TwoDBPassportChar0,1 : "%o s\n", t1_auts_up-t0_auts_up;
+  /* vprintf TwoDBPassportChar0,1 : "Factoring\n%o\n", MinimalPolynomial(L.1); */
+  /* printf "Factoring\n%o\n", MinimalPolynomial(L.1); */
+  /* t0_roots := Cputime(); */
+  /* time roots := Roots(MinimalPolynomial(L.1), L); */
+  /* roots := [r[1] : r in roots]; */
+  /* t1_roots := Cputime(); */
+  /* printf "%o s\n", t1_roots-t0_roots; */
+  /* vprintf TwoDBPassportChar0,1 : "%o s\n", t1_roots-t0_roots; */
+  /* assert #roots eq Degree(L); */
+  /* vprintf TwoDBPassportChar0,1 : "constructing automorphisms: "; */
+  /* t0_auts_up := Cputime(); */
+  /* auts_up := []; */
+  /* for root in roots do */
+  /*   assert not IsCoercible(F, root); */
+  /*   Append(~auts_up, hom<L->L|root>); */
+  /* end for; */
+  /* t1_auts_up := Cputime(); */
+  /* vprintf TwoDBPassportChar0,1 : "%o s\n", t1_auts_up-t0_auts_up; */
   L;
   printf "measure before optimization = %o\n", MeasureChar0(L);
   // optimized representation
@@ -169,8 +174,8 @@ intrinsic LiftChar0(F::FldFun, phi::FldFunElt, auts::SeqEnum[Map], f::FldFunElt 
     time Lop, mop := OptimizedRepresentation(L);
     // mop: Lop -> L but does not have an inverse
     // so need to find isomorphism
-    mop_inv := Inverse(Lop, L, mop);
-    auts_up := AutsOptimized(L, Lop, mop, mop_inv, auts_up);
+    /* mop_inv := Inverse(Lop, L, mop); */
+    /* auts_up := AutsOptimized(L, Lop, mop, mop_inv, auts_up); */
     // redefine L
     L := Lop;
     L<a> := L;
@@ -182,22 +187,8 @@ intrinsic LiftChar0(F::FldFun, phi::FldFunElt, auts::SeqEnum[Map], f::FldFunElt 
   end if;
   L;
   printf "measure after optimization = %o\n", MeasureChar0(L);
-  return L, phi, auts_up;
-end intrinsic;
-
-intrinsic PrintAutChar0(mp::Map) -> Any
-  {}
-  F := Domain(mp);
-  K := ConstantField(F);
-  str := Sprintf("Automorphism of %o\n", F);
-  str *:= Sprintf("Generator = %o\n", F.1);
-  for i := 1 to #Basis(F)-1 do
-    b := Basis(F)[i];
-    str *:= Sprintf("%o\t|--> %o\n", b, mp(b));
-  end for;
-  b := Basis(F)[#Basis(F)];
-  str *:= Sprintf("%o\t|--> %o\n", b, mp(b));
-  return str;
+  /* return L, phi, auts_up; */
+  return L, phi;
 end intrinsic;
 
 // K = QQ(zeta_{2^m})
@@ -213,6 +204,21 @@ intrinsic LiftOverExtensionChar0(K::FldNum, F::FldFun, phi::FldFunElt, auts::Seq
     fK := f;
   end if;
   return LiftChar0(FK, phiK, autsK, fK : optimized := optimized);
+end intrinsic;
+
+intrinsic PrintAutChar0(mp::Map) -> Any
+  {}
+  F := Domain(mp);
+  K := ConstantField(F);
+  str := Sprintf("Automorphism of %o\n", F);
+  str *:= Sprintf("Generator = %o\n", F.1);
+  for i := 1 to #Basis(F)-1 do
+    b := Basis(F)[i];
+    str *:= Sprintf("%o\t|--> %o\n", b, mp(b));
+  end for;
+  b := Basis(F)[#Basis(F)];
+  str *:= Sprintf("%o\t|--> %o\n", b, mp(b));
+  return str;
 end intrinsic;
 
 intrinsic GetDownstairsBelyiMaps(s::TwoDBPassportChar0) -> Any

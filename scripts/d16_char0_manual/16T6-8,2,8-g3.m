@@ -6,9 +6,9 @@ SetDebugOnError(true);
 
 objs := GetPassportChar0Objects(16);
 
-which_object := 5;
+which_object := 9;
 which_passport_below := 1;
-which_candidate := 1;
+which_candidate := 2;
 which_belyi_map := 1;
 optimized := false;
 
