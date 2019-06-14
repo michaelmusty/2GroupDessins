@@ -394,37 +394,37 @@ end intrinsic;
 
 /* choosing "best" function field */
 
-intrinsic Measure(F::FldFun) -> RngIntElt
-  {}
-  poly := DefiningPolynomial(F);
-  height_sum := 0;
-  l := Eltseq(poly);
-  for i := 1 to #l do
-    num := Numerator(l[i]);
-    den := Denominator(l[i]);
-    coeffs_num := Eltseq(num);
-    for j := 1 to #coeffs_num do
-      l_j := Eltseq(coeffs_num[j]);
-      height_sum +:= &+[Integers()!x : x in l_j];
-    end for;
-    coeffs_den := Eltseq(den);
-    for j := 1 to #coeffs_den do
-      l_j := Eltseq(coeffs_den[j]);
-      height_sum +:= &+[Integers()!x : x in l_j];
-    end for;
-  end for;
-  return height_sum;
-end intrinsic;
+/* intrinsic Measure(F::FldFun) -> RngIntElt */
+/*   {} */
+/*   poly := DefiningPolynomial(F); */
+/*   height_sum := 0; */
+/*   l := Eltseq(poly); */
+/*   for i := 1 to #l do */
+/*     num := Numerator(l[i]); */
+/*     den := Denominator(l[i]); */
+/*     coeffs_num := Eltseq(num); */
+/*     for j := 1 to #coeffs_num do */
+/*       l_j := Eltseq(coeffs_num[j]); */
+/*       height_sum +:= &+[Integers()!x : x in l_j]; */
+/*     end for; */
+/*     coeffs_den := Eltseq(den); */
+/*     for j := 1 to #coeffs_den do */
+/*       l_j := Eltseq(coeffs_den[j]); */
+/*       height_sum +:= &+[Integers()!x : x in l_j]; */
+/*     end for; */
+/*   end for; */
+/*   return height_sum; */
+/* end intrinsic; */
 
-intrinsic BestFunctionField(l::List) -> FldFun
+intrinsic BestFunctionFieldChar0(l::List) -> FldFun
   {}
   if #l eq 1 then
     return l[1];
   else
     best_index := 1;
-    best_measure := Measure(l[1]);
+    best_measure := MeasureChar0(l[1]);
     for i := 2 to #l do
-      new_measure := Measure(l[i]);
+      new_measure := MeasureChar0(l[i]);
       if new_measure lt best_measure then
         best_index := i;
         best_measure := new_measure;
@@ -434,11 +434,29 @@ intrinsic BestFunctionField(l::List) -> FldFun
   end if;
 end intrinsic;
 
-intrinsic BestOfPair(l::List) -> Any
+intrinsic BestFunctionFieldChar0(l::SeqEnum[FldFun]) -> FldFun
+  {}
+  if #l eq 1 then
+    return l[1];
+  else
+    best_index := 1;
+    best_measure := MeasureChar0(l[1]);
+    for i := 2 to #l do
+      new_measure := MeasureChar0(l[i]);
+      if new_measure lt best_measure then
+        best_index := i;
+        best_measure := new_measure;
+      end if;
+    end for;
+    return l[best_index];
+  end if;
+end intrinsic;
+
+intrinsic BestOfPairChar0(l::List) -> Any
   {}
   assert #l eq 2;
-  measure1 := Measure(l[1]);
-  measure2 := Measure(l[2]);
+  measure1 := MeasureChar0(l[1]);
+  measure2 := MeasureChar0(l[2]);
   if measure2 lt measure1 then
     return l[2], 2;
   else

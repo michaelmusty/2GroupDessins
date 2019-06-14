@@ -15,10 +15,12 @@
   functionfields
   {
     global.m
+    char0.m
     sanity_check.m
     manipulating_divisors.m
     class_groups.m
     automorphisms.m
+    automorphisms_char0.m
     passport_wrapper.m
     passport_wrapper_char0.m
     passport_sanity_check.m

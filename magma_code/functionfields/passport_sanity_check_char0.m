@@ -3,6 +3,27 @@ intrinsic IsComputed(s::TwoDBPassportChar0) -> BoolElt
   return assigned s`FunctionFields and assigned s`BelyiMaps and assigned s`FunctionFieldAutomorphisms;
 end intrinsic;
 
+intrinsic TwoVerifyChar0(s::TwoDBPassportChar0) -> BoolElt
+  {}
+  if IsComputed(s) then
+    sigma := PermutationTriple(Objects(s)[1]);
+    bools := [];
+    for i := 1 to #FunctionFields(s) do
+      F := FunctionFields(s)[i];
+      phi := BelyiMaps(s)[i];
+      auts := FunctionFieldAutomorphisms(s)[i];
+      Append(~bools, TwoVerifyChar0(sigma, F, phi, auts));
+    end for;
+    if false in bools then
+      return false;
+    else
+      return true;
+    end if;
+  else
+    return false;
+  end if;
+end intrinsic;
+
 intrinsic TwoVerifyChar0(sigma::SeqEnum[GrpPermElt], F::FldFun, phi::FldFunElt, auts::SeqEnum[Map] : galois_group := false) -> BoolElt
   {}
   d := Degree(Parent(sigma[1]));

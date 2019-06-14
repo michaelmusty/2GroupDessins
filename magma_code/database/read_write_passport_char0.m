@@ -87,9 +87,11 @@ end intrinsic;
 
 intrinsic NumberFieldText(K::FldNum) -> MonStgElt
   {}
+  assert Type(K) eq FldCyc;
   K<nu> := K;
-  definingpoly := DefiningPolynomial(K);
-  return Sprintf("K<nu> := NumberField(%m);\n", definingpoly);
+  /* definingpoly := DefiningPolynomial(K); */
+  /* return Sprintf("K<nu> := NumberField(%m);\n", definingpoly); */
+  return Sprintf("K<nu> := CyclotomicField(%m);\n", CyclotomicOrder(K));
 end intrinsic;
 
 intrinsic BelyiMapChar0Text(F::FldFun, phi::FldFunElt) -> MonStgElt
