@@ -58,4 +58,8 @@
     refined.m
     representation_theory.m
   }
+  d3ssins
+  {
+    json_database.m
+  }
 }
