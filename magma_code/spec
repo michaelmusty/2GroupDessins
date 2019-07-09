@@ -57,6 +57,7 @@
     passports.m
     refined.m
     representation_theory.m
+    refined_testing.m
   }
   d3ssins
   {
