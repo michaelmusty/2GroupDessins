@@ -9,7 +9,7 @@ for d in degrees do
     t0 := Cputime();
     pass := RefinedPassportJV(PermutationTriple(s));
     t1 := Cputime();
-    printf "%o : size %o : %o s\n", Name(s), #pass, t1-t0;
+    printf "%o:\nsize %o : %o s\n\n", Name(s), #pass, t1-t0;
     if #pass gt 1 then
       Append(~size, s);
     end if;
