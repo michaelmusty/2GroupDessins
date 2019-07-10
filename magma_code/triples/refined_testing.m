@@ -35,6 +35,7 @@ intrinsic SpotCheck(s::TwoDB, l::RngIntElt) -> Any
     Append(~path, below);
     below := Random(above);
   end for;
+  Append(~path, below);
   printf "computing refined passports for path:\n%o\n", path;
   for i := 1 to #path do
     s := path[i];
